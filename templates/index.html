@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MODEL.IA - Procesamiento de Documentos Inmobiliarios</title>
+    <title>Mi Cuenta - MODEL.IA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -53,13 +53,7 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             background-color: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            transition: transform 0.3s, box-shadow 0.3s;
             margin-bottom: 2rem;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
         }
         
         .card-header {
@@ -92,6 +86,16 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         
+        .btn-outline-light {
+            color: white;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .btn-outline-light:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
         .footer {
             background-color: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -105,55 +109,53 @@
             text-decoration: none;
         }
         
-        .hero-container {
-            padding-top: 2rem;
-            padding-bottom: 4rem;
-        }
-        
-        .hero-title {
-            font-size: 3.5rem;
-            font-weight: 800;
-            color: white;
-            margin-bottom: 1.5rem;
-        }
-        
-        .hero-subtitle {
-            font-size: 1.5rem;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 3rem;
-        }
-        
-        .model-card {
-            padding: 2.5rem;
-            text-align: center;
-            height: 100%;
-        }
-        
-        .model-icon {
-            font-size: 4rem;
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-        }
-        
-        .model-title {
-            font-size: 1.75rem;
+        .page-title {
+            font-size: 2.5rem;
             font-weight: 700;
-            margin-bottom: 1rem;
+            color: white;
+            margin-bottom: 2rem;
         }
         
-        .model-description {
-            color: #64748b;
+        .form-control {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .form-select {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .icon-label {
+            display: flex;
+            align-items: center;
+        }
+        
+        .icon-label i {
+            margin-right: 0.5rem;
+        }
+        
+        .required:after {
+            content: " *";
+            color: #dc3545;
+        }
+        
+        /* Alerts */
+        .alert {
+            border-radius: 0.5rem;
+            padding: 1rem;
             margin-bottom: 1.5rem;
         }
         
-        /* Animation classes */
-        .fade-in {
-            animation: fadeIn 1s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .alert-success {
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+            color: #0f5132;
         }
     </style>
 </head>
@@ -168,10 +170,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="/">Inicio</a>
+                        <a class="nav-link" href="/">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/cuenta">Cuenta</a>
+                        <a class="nav-link active" href="/cuenta">Cuenta</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/contacto">Contacto</a>
@@ -181,31 +183,64 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <div class="container hero-container text-center">
-        <h1 class="hero-title fade-in">Bienvenido a MODEL.IA</h1>
-        <p class="hero-subtitle fade-in">Solución inteligente para modelos fiscales en operaciones inmobiliarias</p>
-        
-        <div class="row g-4">
+    <!-- Content -->
+    <div class="container py-5">
+        <div class="row mb-4">
             <div class="col-md-6">
-                <div class="card model-card fade-in">
-                    <div class="model-icon">
-                        <i class="bi bi-file-earmark-text"></i>
-                    </div>
-                    <h2 class="model-title">Modelo 211</h2>
-                    <p class="model-description">Impuesto sobre la renta de no residentes</p>
-                    <a href="/modelo-211" class="btn btn-primary btn-lg">Generar Modelo 211</a>
-                </div>
+                <a href="/" class="btn btn-outline-light mb-3">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+                <h1 class="page-title">Mi Cuenta</h1>
             </div>
-            
-            <div class="col-md-6">
-                <div class="card model-card fade-in">
-                    <div class="model-icon">
-                        <i class="bi bi-file-earmark"></i>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <!-- Success alert (hidden by default) -->
+                <div id="success-alert" class="alert alert-success d-none">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Configuración guardada correctamente
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="bi bi-gear me-2"></i>
+                            Configuración de IA
+                        </h2>
                     </div>
-                    <h2 class="model-title">Modelo 600</h2>
-                    <p class="model-description">Impuesto de Transmisiones Patrimoniales</p>
-                    <a href="/modelo-600" class="btn btn-primary btn-lg">Extraer Datos Modelo 600</a>
+                    <div class="card-body">
+                        <form id="api-settings-form">
+                            <div class="mb-4">
+                                <label for="ai-provider" class="form-label required">Proveedor de IA</label>
+                                <select id="ai-provider" class="form-select" required>
+                                    <option value="">Seleccionar proveedor</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="deepseek">DeepSeek</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="api-key" class="form-label icon-label required">
+                                    <i class="bi bi-key"></i> Clave API
+                                </label>
+                                <input 
+                                    type="password" 
+                                    id="api-key" 
+                                    class="form-control" 
+                                    placeholder="Introducir clave API" 
+                                    required
+                                >
+                                <div class="form-text text-muted mt-2">
+                                    Tu clave API se almacena de forma segura y solo se usa para procesar documentos.
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100 py-3">
+                                Guardar Configuración
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -229,5 +264,41 @@
 
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved settings
+            const aiProvider = localStorage.getItem('ai_provider');
+            const apiKey = localStorage.getItem('api_key');
+            
+            if (aiProvider) {
+                document.getElementById('ai-provider').value = aiProvider;
+            }
+            
+            if (apiKey) {
+                document.getElementById('api-key').value = apiKey;
+            }
+            
+            // Handle form submission
+            document.getElementById('api-settings-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const provider = document.getElementById('ai-provider').value;
+                const key = document.getElementById('api-key').value;
+                
+                // Save to localStorage
+                localStorage.setItem('ai_provider', provider);
+                localStorage.setItem('api_key', key);
+                
+                // Show success message
+                const alert = document.getElementById('success-alert');
+                alert.classList.remove('d-none');
+                
+                // Hide the alert after 3 seconds
+                setTimeout(() => {
+                    alert.classList.add('d-none');
+                }, 3000);
+            });
+        });
+    </script>
 </body>
 </html>
