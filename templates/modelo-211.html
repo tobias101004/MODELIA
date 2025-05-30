@@ -330,9 +330,11 @@
     </footer>
 
     <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("Document loaded - initializing Modelo 211 page");
             const fileInput = document.getElementById('file-input');
             const uploadArea = document.getElementById('upload-area');
             const browseButton = document.getElementById('browse-button');
@@ -356,6 +358,7 @@
             
             // File input change handler
             fileInput.addEventListener('change', function(e) {
+                console.log("File input changed");
                 if (this.files.length > 0) {
                     handleFileSelection(this.files[0]);
                 }
@@ -363,11 +366,13 @@
             
             // Browse button click handler
             browseButton.addEventListener('click', function() {
+                console.log("Browse button clicked");
                 fileInput.click();
             });
             
             // Upload area click handler
             uploadArea.addEventListener('click', function() {
+                console.log("Upload area clicked");
                 fileInput.click();
             });
             
@@ -384,6 +389,7 @@
             uploadArea.addEventListener('drop', function(e) {
                 e.preventDefault();
                 this.classList.remove('dragover');
+                console.log("File dropped");
                 
                 if (e.dataTransfer.files.length > 0) {
                     handleFileSelection(e.dataTransfer.files[0]);
@@ -392,14 +398,17 @@
             
             // Remove file button click handler
             removeFile.addEventListener('click', function() {
+                console.log("Remove file clicked");
                 resetFileSelection();
             });
             
             // Form submit handler
             uploadForm.addEventListener('submit', function(e) {
                 e.preventDefault();
+                console.log("Form submitted");
                 
                 if (!selectedFile) {
+                    console.log("No file selected");
                     return;
                 }
                 
@@ -422,12 +431,15 @@
                 formData.append('ai_provider', apiProvider);
                 formData.append('api_key', apiKey);
                 
+                console.log("Sending request to /proceso_completo");
+                
                 // Send request to server
                 fetch('/proceso_completo', {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => {
+                    console.log("Response received", response.status);
                     if (!response.ok) {
                         return response.json().then(data => {
                             throw new Error(data.error || 'Error al procesar el documento');
@@ -436,10 +448,12 @@
                     return response.json();
                 })
                 .then(data => {
+                    console.log("Success response:", data);
                     // Redirect to download page
                     window.location.href = `/modelo-211-exito?file_id=${data.file_id}`;
                 })
                 .catch(error => {
+                    console.error("Error:", error);
                     // Show error
                     showError(error.message);
                     
@@ -451,6 +465,7 @@
             
             // Handle file selection
             function handleFileSelection(file) {
+                console.log("Handling file selection:", file.name);
                 // Check if file is PDF
                 if (file.type !== 'application/pdf') {
                     showError('Por favor, seleccione un archivo PDF válido.');
@@ -469,6 +484,7 @@
             
             // Reset file selection
             function resetFileSelection() {
+                console.log("Resetting file selection");
                 selectedFile = null;
                 fileInput.value = '';
                 uploadArea.classList.remove('d-none');
@@ -478,6 +494,7 @@
             
             // Show error message
             function showError(message) {
+                console.error("Error:", message);
                 errorMessage.textContent = message;
                 errorAlert.classList.remove('d-none');
             }
