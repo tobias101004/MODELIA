@@ -5,3 +5,4 @@ httpx
 pdfminer.six
 pydantic
 unidecode
+python-multipart
