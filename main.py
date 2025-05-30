@@ -1,12 +1,8 @@
-@app.get("/modelo-211-exito", response_class=HTMLResponse)
-async def modelo_211_exito(request: Request):
-    """Render the modelo 211 success page"""
-    file_id = request.query_params.get("file_id", "")
-    return templates.TemplateResponse("modelo-211-exito.html", {"request": request, "file_id": file_id})"""
+"""
 MODEL.IA - Integrated application for processing real estate documents
 """
 
-from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException, Body
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -15,6 +11,7 @@ from pathlib import Path
 import logging
 import json
 import re
+from typing import Dict, Any
 
 # Import our modules
 from pdfminer.high_level import extract_text
@@ -89,35 +86,11 @@ async def modelo_211_edit(request: Request):
         logger.error(f"Error loading data for modelo 211 edit: {str(e)}")
         return HTMLResponse("Error loading data. Please try again.")
 
-@app.post("/generar_211")
-async def generar_211(data: Dict[str, Any] = Body(...)):
-    """Generate 211 file from form data"""
-    try:
-        logger.info("Generating 211 file from form data")
-        
-        file_id = data.get("file_id", str(uuid.uuid4()))
-        
-        # Generate 211 file content
-        file_content = generate_211_file(data)
-        
-        # Create a temporary file for the 211 content
-        file_path = Path("temp") / f"{file_id}.211"
-        
-        # Write content to file
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(file_content)
-            
-        logger.info(f"211 file generated successfully: {file_path}")
-        
-        # Return file ID for download
-        return {"file_id": file_id, "message": "Archivo 211 generado correctamente"}
-        
-    except Exception as e:
-        logger.error(f"Error generating 211 file: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Error al generar el archivo 211: {str(e)}"}
-        )
+@app.get("/modelo-211-exito", response_class=HTMLResponse)
+async def modelo_211_exito(request: Request):
+    """Render the modelo 211 success page"""
+    file_id = request.query_params.get("file_id", "")
+    return templates.TemplateResponse("modelo-211-exito.html", {"request": request, "file_id": file_id})
 
 @app.get("/modelo-600-resultados", response_class=HTMLResponse)
 async def modelo_600_resultados(request: Request):
@@ -148,7 +121,7 @@ async def proceso_completo(
     ai_provider: str = Form("openai"),
     api_key: str = Form(...)
 ):
-    """Process PDF file for modelo 211 and generate the file directly"""
+    """Process PDF file for modelo 211 and extract data"""
     try:
         # Log request details for debugging
         logger.info(f"Received proceso_completo request with file: {pdf_file.filename}, provider: {ai_provider}")
@@ -294,6 +267,36 @@ async def procesar_600(
         return JSONResponse(
             status_code=500,
             content={"error": f"Error inesperado al procesar la solicitud: {str(e)}"}
+        )
+
+@app.post("/generar_211")
+async def generar_211(data: Dict[str, Any] = Body(...)):
+    """Generate 211 file from form data"""
+    try:
+        logger.info("Generating 211 file from form data")
+        
+        file_id = data.get("file_id", str(uuid.uuid4()))
+        
+        # Generate 211 file content
+        file_content = generate_211_file(data)
+        
+        # Create a temporary file for the 211 content
+        file_path = Path("temp") / f"{file_id}.211"
+        
+        # Write content to file
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(file_content)
+            
+        logger.info(f"211 file generated successfully: {file_path}")
+        
+        # Return file ID for download
+        return {"file_id": file_id, "message": "Archivo 211 generado correctamente"}
+        
+    except Exception as e:
+        logger.error(f"Error generating 211 file: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Error al generar el archivo 211: {str(e)}"}
         )
 
 @app.get("/descargar/{file_id}")
