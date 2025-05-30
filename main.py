@@ -46,7 +46,7 @@ templates = Jinja2Templates(directory="templates")
 async def read_root(request: Request):
     """Render the main page with the form to upload a PDF"""
     logger.info("Rendering index page")
-    return templates.TemplateResponse("simplified_index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/proceso_completo")
 async def proceso_completo(
