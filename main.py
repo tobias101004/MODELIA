@@ -106,6 +106,9 @@ async def proceso_completo(
 ):
     """Process PDF file for modelo 211 and generate the file directly"""
     try:
+        # Log request details for debugging
+        logger.info(f"Received proceso_completo request with file: {pdf_file.filename}, provider: {ai_provider}")
+        
         # Create a temporary file to store the PDF
         file_id = str(uuid.uuid4())
         pdf_path = Path("temp") / f"{file_id}.pdf"
@@ -201,6 +204,9 @@ async def procesar_600(
 ):
     """Process PDF file for modelo 600 extraction"""
     try:
+        # Log request details for debugging
+        logger.info(f"Received procesar_600 request with file: {pdf_file.filename}, provider: {ai_provider}")
+        
         # Create a temporary file to store the PDF
         file_id = str(uuid.uuid4())
         pdf_path = Path("temp") / f"{file_id}.pdf"
