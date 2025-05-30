@@ -1,4 +1,8 @@
-"""
+@app.get("/modelo-211-exito", response_class=HTMLResponse)
+async def modelo_211_exito(request: Request):
+    """Render the modelo 211 success page"""
+    file_id = request.query_params.get("file_id", "")
+    return templates.TemplateResponse("modelo-211-exito.html", {"request": request, "file_id": file_id})"""
 MODEL.IA - Integrated application for processing real estate documents
 """
 
@@ -69,11 +73,51 @@ async def modelo_600(request: Request):
     """Render the modelo 600 page"""
     return templates.TemplateResponse("modelo-600.html", {"request": request})
 
-@app.get("/modelo-211-exito", response_class=HTMLResponse)
-async def modelo_211_exito(request: Request):
-    """Render the modelo 211 success page"""
+@app.get("/modelo-211-edit", response_class=HTMLResponse)
+async def modelo_211_edit(request: Request):
+    """Render the modelo 211 edit page"""
     file_id = request.query_params.get("file_id", "")
-    return templates.TemplateResponse("modelo-211-exito.html", {"request": request, "file_id": file_id})
+    
+    try:
+        # Load the extracted data from the file
+        data_path = Path("temp") / f"{file_id}_data.json"
+        with open(data_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        return templates.TemplateResponse("modelo-211-edit.html", {"request": request, "file_id": file_id, "data": data})
+    except Exception as e:
+        logger.error(f"Error loading data for modelo 211 edit: {str(e)}")
+        return HTMLResponse("Error loading data. Please try again.")
+
+@app.post("/generar_211")
+async def generar_211(data: Dict[str, Any] = Body(...)):
+    """Generate 211 file from form data"""
+    try:
+        logger.info("Generating 211 file from form data")
+        
+        file_id = data.get("file_id", str(uuid.uuid4()))
+        
+        # Generate 211 file content
+        file_content = generate_211_file(data)
+        
+        # Create a temporary file for the 211 content
+        file_path = Path("temp") / f"{file_id}.211"
+        
+        # Write content to file
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(file_content)
+            
+        logger.info(f"211 file generated successfully: {file_path}")
+        
+        # Return file ID for download
+        return {"file_id": file_id, "message": "Archivo 211 generado correctamente"}
+        
+    except Exception as e:
+        logger.error(f"Error generating 211 file: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Error al generar el archivo 211: {str(e)}"}
+        )
 
 @app.get("/modelo-600-resultados", response_class=HTMLResponse)
 async def modelo_600_resultados(request: Request):
@@ -156,29 +200,8 @@ async def proceso_completo(
                 
             logger.info("Data extraction successful")
             
-            # Generate 211 file
-            try:
-                logger.info("Generating 211 file from extracted data")
-                file_content = generate_211_file(extracted_data)
-                
-                # Create a temporary file for the 211 content
-                file_path = Path("temp") / f"{file_id}.211"
-                
-                # Write content to file
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(file_content)
-                    
-                logger.info(f"211 file generated successfully: {file_path}")
-                
-                # Return file ID for download
-                return {"file_id": file_id, "message": "Archivo 211 generado correctamente"}
-                
-            except Exception as e:
-                logger.error(f"Error generating 211 file: {str(e)}")
-                return JSONResponse(
-                    status_code=500,
-                    content={"error": f"Error al generar el archivo 211: {str(e)}"}
-                )
+            # Return file ID for edit page
+            return {"file_id": file_id, "message": "Datos extraídos correctamente"}
             
         except Exception as e:
             logger.error(f"Error in AI extraction: {str(e)}")
