@@ -3,495 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Archivos 211 para Hacienda</title>
+    <title>MODEL.IA - Procesamiento de Documentos Inmobiliarios</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary-color: #f97316; /* Orange 500 */
+            --primary-dark: #ea580c; /* Orange 600 */
+            --primary-light: #ffedd5; /* Orange 100 */
+            --text-dark: #1e293b; /* Slate 800 */
+            --text-light: #f8fafc; /* Slate 50 */
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding-top: 2rem;
-            padding-bottom: 3rem;
-            background-color: #f8f9fa;
-            color: #333;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, var(--primary-color), white);
+            color: var(--text-dark);
         }
-        .container {
-            max-width: 1140px;
+        
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
         }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: white;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover {
+            color: white;
+        }
+        
+        .nav-link.active {
+            color: white;
+            border-bottom: 2px solid white;
+        }
+        
         .card {
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
+            border-radius: 1rem;
             border: none;
-            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-bottom: 2rem;
         }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        
         .card-header {
-            background-color: #e7f1ff;
-            border-bottom: 1px solid #d0e2ff;
-            padding: 1rem 1.5rem;
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1.5rem 1.5rem 0.75rem;
         }
+        
+        .card-title {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        
         .card-body {
             padding: 1.5rem;
         }
-        .steps-container {
-            position: relative;
-            counter-reset: step;
-        }
-        .step {
-            margin-bottom: 2.5rem;
-            position: relative;
-            padding-left: 3.5rem;
-        }
-        .step::before {
-            content: counter(step);
-            counter-increment: step;
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 2.5rem;
-            height: 2.5rem;
-            border-radius: 50%;
-            background-color: #0d6efd;
-            color: white;
-            text-align: center;
-            line-height: 2.5rem;
-            font-weight: bold;
-            font-size: 1.2rem;
-            box-shadow: 0 2px 4px rgba(13, 110, 253, 0.3);
-        }
-        #loadingSpinner {
-            display: none;
-            padding: 2rem 0;
-            text-align: center;
-        }
-        #pdfContent {
-            height: 300px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            white-space: pre-wrap;
-            font-size: 0.85rem;
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 6px;
-            border: 1px solid #dee2e6;
-        }
-        .success-icon {
-            display: block;
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: #198754;
-        }
+        
         .btn-primary {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-            padding: 0.6rem 1.5rem;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
             font-weight: 500;
-            transition: all 0.2s ease-in-out;
-        }
-        .btn-success {
-            background-color: #198754;
-            border-color: #198754;
             padding: 0.6rem 1.5rem;
-            font-weight: 500;
-            transition: all 0.2s ease-in-out;
+            transition: all 0.2s;
         }
-        .btn-outline-secondary {
-            color: #6c757d;
-            border-color: #6c757d;
-            padding: 0.6rem 1.5rem;
+        
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        #downloadSection {
-            display: none;
+        
+        .footer {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 0;
+            color: white;
+            margin-top: 4rem;
         }
-        #errorMessage {
-            display: none;
+        
+        .footer a {
+            color: white;
+            text-decoration: none;
         }
-        .required-field::after {
-            content: " *";
-            color: red;
+        
+        .hero-container {
+            padding-top: 2rem;
+            padding-bottom: 4rem;
         }
-        .highlight-field {
-            background-color: #fff3cd;
-        }
-        .data-form {
-            display: none;
-        }
-        .form-section {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 1rem;
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
             margin-bottom: 1.5rem;
-            border: 1px solid #e9ecef;
         }
-        .form-section h4 {
+        
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 3rem;
+        }
+        
+        .model-card {
+            padding: 2.5rem;
+            text-align: center;
+            height: 100%;
+        }
+        
+        .model-icon {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .model-title {
+            font-size: 1.75rem;
+            font-weight: 700;
             margin-bottom: 1rem;
-            color: #0d6efd;
-            font-size: 1.2rem;
+        }
+        
+        .model-description {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-center mb-4">Generador de Archivos 211 para Hacienda</h1>
-        <p class="text-center mb-4">
-            Esta aplicación procesa escrituras de compraventa inmobiliaria y genera el archivo plano .211 
-            con el formato requerido por la Agencia Tributaria.
-        </p>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg py-3">
+        <div class="container">
+            <a class="navbar-brand" href="/">MODEL.IA</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cuenta">Cuenta</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contacto">Contacto</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-        <div class="steps-container">
-            <div class="step" id="step1">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Paso 1: Subir escritura de compraventa (PDF)</h3>
+    <!-- Hero Section -->
+    <div class="container hero-container text-center">
+        <h1 class="hero-title fade-in">Bienvenido a MODEL.IA</h1>
+        <p class="hero-subtitle fade-in">Solución inteligente para modelos fiscales en operaciones inmobiliarias</p>
+        
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card model-card fade-in">
+                    <div class="model-icon">
+                        <i class="bi bi-file-earmark-text"></i>
                     </div>
-                    <div class="card-body">
-                        <form id="uploadForm" action="/procesar_pdf" method="post" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <label for="pdfFile" class="form-label">Seleccione el archivo PDF con la escritura:</label>
-                                <input type="file" class="form-control" id="pdfFile" name="pdf_file" accept=".pdf" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="aiProvider" class="form-label">Seleccione el proveedor de IA para extracción:</label>
-                                <select class="form-select" id="aiProvider" name="ai_provider">
-                                    <option value="openai" selected>OpenAI (GPT-4)</option>
-                                    <option value="deepseek">DeepSeek</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="apiKey" class="form-label">API Key:</label>
-                                <input type="password" class="form-control" id="apiKey" name="api_key" required>
-                                <div class="form-text">
-                                    Ingrese su API Key para el proveedor seleccionado.
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary" id="processButton">
-                                Procesar PDF
-                            </button>
-                        </form>
-                        <div class="text-center mt-3" id="loadingSpinner">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Cargando...</span>
-                            </div>
-                            <p>Procesando el documento, por favor espere...</p>
-                        </div>
-                    </div>
+                    <h2 class="model-title">Modelo 211</h2>
+                    <p class="model-description">Impuesto sobre la renta de no residentes</p>
+                    <a href="/modelo-211" class="btn btn-primary btn-lg">Generar Modelo 211</a>
                 </div>
             </div>
-
-            <div class="step" id="step2">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Paso 2: Verificar datos extraídos</h3>
+            
+            <div class="col-md-6">
+                <div class="card model-card fade-in">
+                    <div class="model-icon">
+                        <i class="bi bi-file-earmark"></i>
                     </div>
-                    <div class="card-body">
-                        <div class="alert alert-info" role="alert">
-                            <p><strong>Revise los datos extraídos antes de generar el archivo 211.</strong></p>
-                            <p>Verifique o complete los campos obligatorios marcados con asterisco (*). Los campos ya extraídos aparecen completados.</p>
-                        </div>
-                        
-                        <ul class="nav nav-tabs" id="dataTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text" type="button" role="tab">
-                                    Texto Extraído
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" type="button" role="tab">
-                                    Datos Estructurados
-                                </button>
-                            </li>
-                        </ul>
-                        
-                        <div class="tab-content mt-3" id="dataTabsContent">
-                            <div class="tab-pane fade show active" id="text" role="tabpanel">
-                                <div class="mb-3">
-                                    <label for="pdfContent" class="form-label">Texto extraído del PDF:</label>
-                                    <div id="pdfContent" class="form-control"></div>
-                                </div>
-                                <button class="btn btn-primary" id="showDataTabButton">Verificar Datos Extraídos</button>
-                            </div>
-                            
-                            <div class="tab-pane fade" id="data" role="tabpanel">
-                                <form id="dataForm" action="/generar_211" method="post" class="data-form">
-                                    <!-- The form sections will be dynamically generated by JavaScript -->
-                                    <div id="formSections"></div>
-                                    
-                                    <div class="mt-4">
-                                        <button type="submit" class="btn btn-primary">Generar Archivo 211</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="step" id="step3">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Paso 3: Descargar archivo .211</h3>
-                    </div>
-                    <div class="card-body">
-                        <div id="downloadSection" class="text-center">
-                            <div class="alert alert-success" role="alert">
-                                <i class="bi bi-check-circle-fill success-icon"></i>
-                                <h4>¡Archivo generado correctamente!</h4>
-                                <p>El archivo .211 ha sido generado según los datos proporcionados.</p>
-                            </div>
-                            <a id="downloadLink" href="#" class="btn btn-success">
-                                <i class="bi bi-download"></i> Descargar Archivo .211
-                            </a>
-                            <button id="resetButton" class="btn btn-outline-secondary mt-3">
-                                <i class="bi bi-arrow-clockwise"></i> Procesar otro documento
-                            </button>
-                        </div>
-                        <div class="alert alert-danger mt-3" id="errorMessage">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
-                            <span id="errorText"></span>
-                        </div>
-                    </div>
+                    <h2 class="model-title">Modelo 600</h2>
+                    <p class="model-description">Impuesto de Transmisiones Patrimoniales</p>
+                    <a href="/modelo-600" class="btn btn-primary btn-lg">Extraer Datos Modelo 600</a>
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2025 MODEL.IA. Todos los derechos reservados.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/contacto" class="me-3">Contacto</a>
+                    <a href="#" class="me-3">Política de Privacidad</a>
+                    <a href="#">Términos de Servicio</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
-    <!-- JavaScript for interactivity -->
+    <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // References to DOM elements
-            const uploadForm = document.getElementById('uploadForm');
-            const processButton = document.getElementById('processButton');
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            const pdfContent = document.getElementById('pdfContent');
-            const dataForm = document.getElementById('dataForm');
-            const formSections = document.getElementById('formSections');
-            const downloadSection = document.getElementById('downloadSection');
-            const downloadLink = document.getElementById('downloadLink');
-            const resetButton = document.getElementById('resetButton');
-            const errorMessage = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            const showDataTabButton = document.getElementById('showDataTabButton');
-            const dataTab = document.getElementById('data-tab');
-            
-            // State initialization - only show step 1
-            document.getElementById('step2').style.display = 'none';
-            document.getElementById('step3').style.display = 'none';
-            errorMessage.style.display = 'none';
-            
-            // Show data tab when button is clicked
-            showDataTabButton.addEventListener('click', function() {
-                dataTab.click();
-            });
-            
-            // Generate form fields for a section
-            function generateFormSection(sectionName, sectionFields, data) {
-                const section = document.createElement('div');
-                section.className = 'form-section';
-                
-                // Format section name for display
-                const formattedName = sectionName.charAt(0).toUpperCase() + sectionName.slice(1).replace('_', ' ');
-                
-                section.innerHTML = `<h4>${formattedName}</h4>`;
-                
-                // Create fields
-                const fieldsContainer = document.createElement('div');
-                fieldsContainer.className = 'row';
-                
-                sectionFields.forEach(field => {
-                    const fieldValue = data && data[sectionName] ? data[sectionName][field.name] || '' : '';
-                    
-                    const fieldCol = document.createElement('div');
-                    fieldCol.className = 'col-md-6 mb-3';
-                    
-                    let labelClass = 'form-label';
-                    if (field.required) {
-                        labelClass += ' required-field';
-                    }
-                    
-                    const fieldHtml = `
-                        <label for="${sectionName}_${field.name}" class="${labelClass}">${field.label}:</label>
-                        <input type="text" class="form-control${field.required ? ' highlight-field' : ''}" 
-                               id="${sectionName}_${field.name}" 
-                               name="${sectionName}.${field.name}" 
-                               value="${fieldValue}" 
-                               ${field.required ? 'required' : ''}>
-                    `;
-                    
-                    fieldCol.innerHTML = fieldHtml;
-                    fieldsContainer.appendChild(fieldCol);
-                });
-                
-                section.appendChild(fieldsContainer);
-                formSections.appendChild(section);
-            }
-            
-            // Fill form with suggested data
-            function fillFormWithData(data, requiredFields) {
-                formSections.innerHTML = '';
-                
-                // Generate form sections based on required fields
-                for (const [section, fields] of Object.entries(requiredFields)) {
-                    generateFormSection(section, fields, data);
-                }
-                
-                // Show the form
-                dataForm.style.display = 'block';
-            }
-            
-            // Override the default form submission and use fetch API instead
-            uploadForm.addEventListener('submit', async function(e) {
-                e.preventDefault(); // Prevent default form submission
-                
-                // Hide error message if it was previously shown
-                errorMessage.style.display = 'none';
-                
-                // Show loading spinner
-                processButton.disabled = true;
-                loadingSpinner.style.display = 'block';
-                
-                // Get form data
-                const formData = new FormData(uploadForm);
-                
-                try {
-                    console.log("Sending POST request to /procesar_pdf");
-                    
-                    // Send request to server using POST method
-                    const response = await fetch('/procesar_pdf', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    console.log("Response received", response.status);
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    console.log("Response data:", data);
-                    
-                    if (data.error) {
-                        // Show error message
-                        errorText.textContent = data.error;
-                        errorMessage.style.display = 'block';
-                    } else {
-                        // Display extracted text
-                        pdfContent.textContent = data.text;
-                        
-                        // Fill form with suggested data
-                        fillFormWithData(data.suggested_data, data.required_fields);
-                        
-                        // Show step 2
-                        document.getElementById('step2').style.display = 'block';
-                        
-                        // Scroll to step 2
-                        document.getElementById('step2').scrollIntoView({ behavior: 'smooth' });
-                    }
-                } catch (error) {
-                    console.error("Error in fetch:", error);
-                    errorText.textContent = error.message;
-                    errorMessage.style.display = 'block';
-                } finally {
-                    // Hide spinner
-                    processButton.disabled = false;
-                    loadingSpinner.style.display = 'none';
-                }
-            });
-            
-            // Handle structured data form submission
-            if (dataForm) {
-                dataForm.addEventListener('submit', async function(e) {
-                    e.preventDefault(); // Prevent default form submission
-                    
-                    // Hide error message
-                    errorMessage.style.display = 'none';
-                    
-                    // Show loading spinner
-                    loadingSpinner.style.display = 'block';
-                    
-                    // Prepare data object
-                    const formData = new FormData(dataForm);
-                    const jsonData = {};
-                    
-                    // Process form data into nested JSON
-                    for (const [key, value] of formData.entries()) {
-                        const [section, field] = key.split('.');
-                        
-                        if (!jsonData[section]) {
-                            jsonData[section] = {};
-                        }
-                        
-                        jsonData[section][field] = value;
-                    }
-                    
-                    console.log("Submitting data:", jsonData);
-                    
-                    try {
-                        // Send data to server
-                        const response = await fetch('/generar_211', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(jsonData)
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        
-                        const result = await response.json();
-                        console.log("Generation result:", result);
-                        
-                        if (result.error) {
-                            // Show error message
-                            errorText.textContent = result.error;
-                            errorMessage.style.display = 'block';
-                            downloadSection.style.display = 'none';
-                        } else {
-                            // Set download link
-                            downloadLink.href = `/descargar/${result.file_id}`;
-                            
-                            // Show step 3
-                            document.getElementById('step3').style.display = 'block';
-                            downloadSection.style.display = 'block';
-                            
-                            // Scroll to step 3
-                            document.getElementById('step3').scrollIntoView({ behavior: 'smooth' });
-                        }
-                    } catch (error) {
-                        console.error("Error generating 211 file:", error);
-                        errorText.textContent = error.message;
-                        errorMessage.style.display = 'block';
-                        downloadSection.style.display = 'none';
-                    } finally {
-                        // Hide spinner
-                        loadingSpinner.style.display = 'none';
-                    }
-                });
-            }
-            
-            // Reset button handler
-            if (resetButton) {
-                resetButton.addEventListener('click', function() {
-                    // Reset forms
-                    uploadForm.reset();
-                    if (dataForm) dataForm.reset();
-                    
-                    // Clear content areas
-                    pdfContent.textContent = '';
-                    formSections.innerHTML = '';
-                    
-                    // Hide steps 2 and 3
-                    document.getElementById('step2').style.display = 'none';
-                    document.getElementById('step3').style.display = 'none';
-                    errorMessage.style.display = 'none';
-                    
-                    // Show step 1
-                    document.getElementById('step1').scrollIntoView({ behavior: 'smooth' });
-                });
-            }
-        });
-    </script>
 </body>
 </html>
