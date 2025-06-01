@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Cuenta - MODEL.IA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #f97316; /* Orange 500 */
+            --primary-dark: #ea580c; /* Orange 600 */
+            --primary-light: #ffedd5; /* Orange 100 */
+            --text-dark: #1e293b; /* Slate 800 */
+            --text-light: #f8fafc; /* Slate 50 */
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, var(--primary-color), white);
+            color: var(--text-dark);
+        }
+        
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: white;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover {
+            color: white;
+        }
+        
+        .nav-link.active {
+            color: white;
+            border-bottom: 2px solid white;
+        }
+        
+        .card {
+            border-radius: 1rem;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1.5rem 1.5rem 0.75rem;
+        }
+        
+        .card-title {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            font-weight: 500;
+            padding: 0.6rem 1.5rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-outline-light {
+            color: white;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .btn-outline-light:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .footer {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 0;
+            color: white;
+            margin-top: 4rem;
+        }
+        
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .form-control {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .form-select {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .icon-label {
+            display: flex;
+            align-items: center;
+        }
+        
+        .icon-label i {
+            margin-right: 0.5rem;
+        }
+        
+        .required:after {
+            content: " *";
+            color: #dc3545;
+        }
+        
+        /* Alerts */
+        .alert {
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-success {
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+            color: #0f5132;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg py-3">
+        <div class="container">
+            <a class="navbar-brand" href="/">MODEL.IA</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/cuenta">Cuenta</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contacto">Contacto</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <a href="/" class="btn btn-outline-light mb-3">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+                <h1 class="page-title">Mi Cuenta</h1>
+            </div>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <!-- Success alert (hidden by default) -->
+                <div id="success-alert" class="alert alert-success d-none">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Configuración guardada correctamente
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="bi bi-gear me-2"></i>
+                            Configuración de IA
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="api-settings-form">
+                            <div class="mb-4">
+                                <label for="ai-provider" class="form-label required">Proveedor de IA</label>
+                                <select id="ai-provider" class="form-select" required>
+                                    <option value="">Seleccionar proveedor</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="deepseek">DeepSeek</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="api-key" class="form-label icon-label required">
+                                    <i class="bi bi-key"></i> Clave API
+                                </label>
+                                <input 
+                                    type="password" 
+                                    id="api-key" 
+                                    class="form-control" 
+                                    placeholder="Introducir clave API" 
+                                    required
+                                >
+                                <div class="form-text text-muted mt-2">
+                                    Tu clave API se almacena de forma segura y solo se usa para procesar documentos.
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100 py-3">
+                                Guardar Configuración
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2025 MODEL.IA. Todos los derechos reservados.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/contacto" class="me-3">Contacto</a>
+                    <a href="#" class="me-3">Política de Privacidad</a>
+                    <a href="#">Términos de Servicio</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved settings
+            const aiProvider = localStorage.getItem('ai_provider');
+            const apiKey = localStorage.getItem('api_key');
+            
+            if (aiProvider) {
+                document.getElementById('ai-provider').value = aiProvider;
+            }
+            
+            if (apiKey) {
+                document.getElementById('api-key').value = apiKey;
+            }
+            
+            // Handle form submission
+            document.getElementById('api-settings-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const provider = document.getElementById('ai-provider').value;
+                const key = document.getElementById('api-key').value;
+                
+                // Save to localStorage
+                localStorage.setItem('ai_provider', provider);
+                localStorage.setItem('api_key', key);
+                
+                // Show success message
+                const alert = document.getElementById('success-alert');
+                alert.classList.remove('d-none');
+                
+                // Hide the alert after 3 seconds
+                setTimeout(() => {
+                    alert.classList.add('d-none');
+                }, 3000);
+            });
+        });
+    </script>
+</body>
+</html>

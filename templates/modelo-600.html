@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modelo 600 - MODEL.IA</title>
+<<<<<<< HEAD
     
     <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     
+=======
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -21,6 +24,7 @@
             --text-light: #f8fafc; /* Slate 50 */
         }
         
+<<<<<<< HEAD
         * {
             font-family: "Inter", sans-serif;
             font-optical-sizing: auto;
@@ -28,6 +32,10 @@
         }
         
         body {
+=======
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
             min-height: 100vh;
             background: linear-gradient(to bottom, var(--primary-color), white);
             color: var(--text-dark);
@@ -76,7 +84,10 @@
         .card-title {
             color: var(--primary-color);
             font-weight: 700;
+<<<<<<< HEAD
             font-size: 1.5rem;
+=======
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
         }
         
         .card-body {
@@ -89,8 +100,11 @@
             font-weight: 500;
             padding: 0.6rem 1.5rem;
             transition: all 0.2s;
+<<<<<<< HEAD
             position: relative;
             overflow: hidden;
+=======
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
         }
         
         .btn-primary:hover, .btn-primary:focus {
@@ -111,6 +125,7 @@
         }
         
         .footer {
+<<<<<<< HEAD
             background-color: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             padding: 1.5rem 0;
@@ -138,6 +153,25 @@
             letter-spacing: 0.01em;
             line-height: 1.2;
             white-space: nowrap;
+=======
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 0;
+            color: white;
+            margin-top: 4rem;
+        }
+        
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 2rem;
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
         }
         
         /* File upload area */
@@ -230,6 +264,7 @@
             to { transform: rotate(360deg); }
         }
         
+<<<<<<< HEAD
         /* Progress Bar Styles */
         .progress-container {
             position: relative;
@@ -261,6 +296,8 @@
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         
+=======
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
         /* Alerts */
         .alert {
             border-radius: 0.5rem;
@@ -289,7 +326,14 @@
                         <a class="nav-link" href="/">Inicio</a>
                     </li>
                     <li class="nav-item">
+<<<<<<< HEAD
                         <a class="nav-link" href="/api">API</a>
+=======
+                        <a class="nav-link" href="/cuenta">Cuenta</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contacto">Contacto</a>
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
                     </li>
                 </ul>
             </div>
@@ -299,7 +343,11 @@
     <!-- Content -->
     <div class="container py-5">
         <div class="row mb-4">
+<<<<<<< HEAD
             <div class="col-12">
+=======
+            <div class="col-md-6">
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
                 <a href="/" class="btn btn-outline-light mb-3">
                     <i class="bi bi-arrow-left"></i> Volver
                 </a>
@@ -319,7 +367,11 @@
                     <div class="card-header">
                         <h2 class="card-title">
                             <i class="bi bi-file-earmark me-2"></i>
+<<<<<<< HEAD
                             Procesar Escritura
+=======
+                            Procesar Documento PDF
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
                         </h2>
                     </div>
                     <div class="card-body">
@@ -331,7 +383,11 @@
                                 <div class="file-upload-icon">
                                     <i class="bi bi-cloud-arrow-up"></i>
                                 </div>
+<<<<<<< HEAD
                                 <h3 class="file-upload-title">Arrastra y suelta el PDF aquí</h3>
+=======
+                                <h3 class="file-upload-title">Arrastra y suelta un PDF aquí</h3>
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
                                 <p class="file-upload-text">O haz clic para seleccionar un archivo</p>
                                 <button type="button" id="browse-button" class="btn btn-primary">
                                     Seleccionar archivo
@@ -354,12 +410,18 @@
                                 Procesar Documento
                             </button>
                             
+<<<<<<< HEAD
                             <!-- Processing button with progress bar (hidden by default) -->
                             <button type="button" id="processing-button" class="btn btn-primary w-100 mt-4 py-3 d-none" disabled>
                                 <div class="progress-container">
                                     <div id="progress-bar" class="progress-bar"></div>
                                     <div id="progress-text" class="progress-text">Procesando... 0%</div>
                                 </div>
+=======
+                            <!-- Processing button (hidden by default) -->
+                            <button type="button" id="processing-button" class="btn btn-primary w-100 mt-4 py-3 d-none" disabled>
+                                <span class="spinner"></span> Procesando...
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
                             </button>
                         </form>
                     </div>
@@ -367,6 +429,7 @@
             </div>
         </div>
     </div>
+<<<<<<< HEAD
 
     <!-- JavaScript -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -614,3 +677,20 @@
     </script>
 </body>
 </html>
+=======
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2025 MODEL.IA. Todos los derechos reservados.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/contacto" class="me-3">Contacto</a>
+                    <a href="#" class="me-3">Política de Privacidad</a>
+                    <a href="#">Términos de Servicio</a>
+                </div>
+            </div>
+        </div>
+>>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
