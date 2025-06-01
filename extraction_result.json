@@ -1,0 +1,65 @@
+{
+  "datos_comprador": {
+    "nombre_completo": "DON MATĚJ PROCHÁZKA",
+    "tipo_documento": "X",
+    "nif_nie": "M0409033R",
+    "direccion": "FRYMBURK, 135",
+    "direccion_complemento": "",
+    "codigo_postal": "38279",
+    "municipio": "",
+    "provincia": "",
+    "pais": "REPÚBLICA CHECA"
+  },
+  "datos_vendedor": {
+    "nombre_completo": "DOÑA JASMIN SCHMID",
+    "tipo_documento": "E",
+    "nif_nie": "Z2663833R",
+    "direccion": "SPIELHOFSTRASSE, N.º11",
+    "direccion_complemento": "",
+    "codigo_postal": "71540",
+    "municipio": "MURRHARDT",
+    "provincia": "",
+    "pais": "ALEMANIA"
+  },
+  "datos_inmueble": {
+    "direccion": "Calle La Lajilla, número 2, Arguineguín, San Bartolomé de Tirajana",
+    "referencia_catastral": "2610410DR3721S0039UX",
+    "codigo_postal": "",
+    "municipio": "SAN BARTOLOMÉ DE TIRAJANA",
+    "provincia": "LAS PALMAS"
+  },
+  "datos_operacion": {
+    "fecha_documento": "29/04/2025",
+    "importe": "168000",
+    "retencion": "5040",
+    "porcentaje_adquirido": "100",
+    "tipo_iva": "0",
+    "tipo_itp": "",
+    "codigo_notario": "",
+    "numero_protocolo": "1403"
+  },
+  "datos_presentante": {
+    "nombre_completo": "CARDENAS Y CHAGRIN, S.L.",
+    "tipo_documento": "J",
+    "nif_nie": "B35102854"
+  },
+  "datos_representante_fiscal": {
+    "nombre_completo": "DON DANIEL GARCÍA CHAGRIN",
+    "tipo_documento": "F",
+    "nif_nie": "42202172R",
+    "direccion": "C/ La Lajilla 5, Arguineguín",
+    "codigo_postal": "35120",
+    "municipio": "Mogán",
+    "pais": "ESPAÑA"
+  },
+  "operacion": {
+    "porcentaje_adquirido": 100,
+    "tipo_iva": 0,
+    "tipo_itp": 7
+  },
+  "comprador": {},
+  "vendedor": {},
+  "inmueble": {},
+  "presentante": {},
+  "representante_fiscal": {}
+}

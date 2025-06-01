@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados Modelo 600 - MODEL.IA</title>
+    
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #f97316; /* Orange 500 */
+            --primary-dark: #ea580c; /* Orange 600 */
+            --primary-light: #ffedd5; /* Orange 100 */
+            --text-dark: #1e293b; /* Slate 800 */
+            --text-light: #f8fafc; /* Slate 50 */
+        }
+        
+        * {
+            font-family: "Inter", sans-serif;
+            font-optical-sizing: auto;
+            font-style: normal;
+        }
+        
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, var(--primary-color), white);
+            color: var(--text-dark);
+        }
+        
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: white;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover {
+            color: white;
+        }
+        
+        .nav-link.active {
+            color: white;
+            border-bottom: 2px solid white;
+        }
+        
+        .card {
+            border-radius: 1rem;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            font-weight: 500;
+            padding: 0.6rem 1.5rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-light);
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-outline-primary:hover, .btn-outline-primary:focus {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline-light {
+            color: white;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .btn-outline-light:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .page-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 2rem;
+            letter-spacing: 0.01em;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+        
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .data-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .data-label {
+            font-weight: 600;
+            color: #64748b;
+        }
+        
+        .data-value {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-word;
+        }
+        
+        .copy-btn {
+            background-color: transparent;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 0.25rem;
+            margin-left: 0.5rem;
+            border-radius: 0.25rem;
+            flex-shrink: 0;
+        }
+        
+        .copy-btn:hover {
+            color: var(--primary-dark);
+            transform: scale(1.1);
+            background-color: var(--primary-light);
+        }
+        
+        .copy-btn i {
+            font-size: 1rem;
+        }
+        
+        .section-header {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-light);
+            color: var(--primary-dark);
+        }
+        
+        /* Separator between multiple items */
+        .item-separator {
+            margin: 1.5rem 0;
+            border: none;
+            border-top: 2px solid var(--primary-light);
+        }
+        
+        /* Copy animation */
+        @keyframes copied {
+            0% { opacity: 0; transform: translateY(10px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+        
+        .copied-tooltip {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            animation: copied 1.5s ease-in-out;
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg py-3">
+        <div class="container">
+            <a class="navbar-brand" href="/">MODEL.IA</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api">API</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-12">
+                <a href="/modelo-600" class="btn btn-outline-light mb-3">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+                <h1 class="page-title">Datos Extraídos - Modelo 600</h1>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- COMPRADORES -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="bi bi-people me-2"></i>
+                            COMPRADORES
+                        </h2>
+                        <button class="btn btn-outline-primary btn-sm section-copy-btn" data-section="compradores">
+                            <i class="bi bi-copy me-1"></i> Copiar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        {% for comprador in datos.compradores %}
+                        <div class="data-item">
+                            <span class="data-label">Nombre:</span>
+                            <span class="data-value">
+                                {{ comprador.nombre }}
+                                <button class="copy-btn" data-clipboard="{{ comprador.nombre }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">NIF/NIE:</span>
+                            <span class="data-value">
+                                {{ comprador.nif }}
+                                <button class="copy-btn" data-clipboard="{{ comprador.nif }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Dirección:</span>
+                            <span class="data-value">
+                                {{ comprador.direccion }}
+                                <button class="copy-btn" data-clipboard="{{ comprador.direccion }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        {% if not loop.last %}<hr class="item-separator">{% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- VENDEDORES -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="bi bi-person-check me-2"></i>
+                            VENDEDORES
+                        </h2>
+                        <button class="btn btn-outline-primary btn-sm section-copy-btn" data-section="vendedores">
+                            <i class="bi bi-copy me-1"></i> Copiar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        {% for vendedor in datos.vendedores %}
+                        <div class="data-item">
+                            <span class="data-label">Nombre:</span>
+                            <span class="data-value">
+                                {{ vendedor.nombre }}
+                                <button class="copy-btn" data-clipboard="{{ vendedor.nombre }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">NIE:</span>
+                            <span class="data-value">
+                                {{ vendedor.nie }}
+                                <button class="copy-btn" data-clipboard="{{ vendedor.nie }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Dirección:</span>
+                            <span class="data-value">
+                                {{ vendedor.direccion }}
+                                <button class="copy-btn" data-clipboard="{{ vendedor.direccion }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        {% if not loop.last %}<hr class="item-separator">{% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- DOCUMENTO -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            DOCUMENTO
+                        </h2>
+                        <button class="btn btn-outline-primary btn-sm section-copy-btn" data-section="documento">
+                            <i class="bi bi-copy me-1"></i> Copiar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="data-item">
+                            <span class="data-label">Tipo de documento:</span>
+                            <span class="data-value">
+                                {{ datos.documento.tipo }}
+                                <button class="copy-btn" data-clipboard="{{ datos.documento.tipo }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Fecha:</span>
+                            <span class="data-value">
+                                {{ datos.documento.fecha }}
+                                <button class="copy-btn" data-clipboard="{{ datos.documento.fecha }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Protocolo:</span>
+                            <span class="data-value">
+                                {{ datos.documento.protocolo }}
+                                <button class="copy-btn" data-clipboard="{{ datos.documento.protocolo }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Notario:</span>
+                            <span class="data-value">
+                                {{ datos.documento.notario }}
+                                <button class="copy-btn" data-clipboard="{{ datos.documento.notario }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PROPIEDAD/ES -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="bi bi-house me-2"></i>
+                            PROPIEDAD/ES
+                        </h2>
+                        <button class="btn btn-outline-primary btn-sm section-copy-btn" data-section="propiedades">
+                            <i class="bi bi-copy me-1"></i> Copiar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        {% for propiedad in datos.propiedades %}
+                        <div class="data-item">
+                            <span class="data-label">Descripción:</span>
+                            <span class="data-value">
+                                {{ propiedad.descripcion }}
+                                <button class="copy-btn" data-clipboard="{{ propiedad.descripcion }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Superficie útil:</span>
+                            <span class="data-value">
+                                {{ propiedad.superficie }}
+                                <button class="copy-btn" data-clipboard="{{ propiedad.superficie }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Referencia catastral:</span>
+                            <span class="data-value">
+                                {{ propiedad.referencia }}
+                                <button class="copy-btn" data-clipboard="{{ propiedad.referencia }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        {% if not loop.last %}<hr class="item-separator">{% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- VALORES -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="bi bi-currency-euro me-2"></i>
+                            VALORES
+                        </h2>
+                        <button class="btn btn-outline-primary btn-sm section-copy-btn" data-section="valores">
+                            <i class="bi bi-copy me-1"></i> Copiar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="data-item">
+                            <span class="data-label">Importe de compraventa:</span>
+                            <span class="data-value">
+                                {{ datos.valores.importe }}
+                                <button class="copy-btn" data-clipboard="{{ datos.valores.importe }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Valor de Referencia:</span>
+                            <span class="data-value">
+                                {{ datos.valores.valorReferencia }}
+                                <button class="copy-btn" data-clipboard="{{ datos.valores.valorReferencia }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Retención 3% MOD211:</span>
+                            <span class="data-value">
+                                {{ datos.valores.retencion }}
+                                <button class="copy-btn" data-clipboard="{{ datos.valores.retencion }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- REPRESENTACIÓN FISCAL -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="bi bi-person-badge me-2"></i>
+                            REPRESENTACIÓN FISCAL
+                        </h2>
+                        <button class="btn btn-outline-primary btn-sm section-copy-btn" data-section="representacion">
+                            <i class="bi bi-copy me-1"></i> Copiar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="data-item">
+                            <span class="data-label">Nombre del representante:</span>
+                            <span class="data-value">
+                                {{ datos.representacionFiscal.nombre }}
+                                <button class="copy-btn" data-clipboard="{{ datos.representacionFiscal.nombre }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">DNI:</span>
+                            <span class="data-value">
+                                {{ datos.representacionFiscal.dni }}
+                                <button class="copy-btn" data-clipboard="{{ datos.representacionFiscal.dni }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PRESENTANTE DEL TÍTULO -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="bi bi-briefcase me-2"></i>
+                            PRESENTANTE DEL TÍTULO
+                        </h2>
+                        <button class="btn btn-outline-primary btn-sm section-copy-btn" data-section="presentante">
+                            <i class="bi bi-copy me-1"></i> Copiar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="data-item">
+                            <span class="data-label">Nombre de la empresa:</span>
+                            <span class="data-value">
+                                {{ datos.presentante.empresa }}
+                                <button class="copy-btn" data-clipboard="{{ datos.presentante.empresa }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">CIF:</span>
+                            <span class="data-value">
+                                {{ datos.presentante.cif }}
+                                <button class="copy-btn" data-clipboard="{{ datos.presentante.cif }}">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Copy functionality for individual items
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const text = this.getAttribute('data-clipboard');
+                    copyToClipboard(text);
+                    showCopiedTooltip();
+                });
+            });
+            
+            // Copy entire section
+            document.querySelectorAll('.section-copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const section = this.getAttribute('data-section');
+                    let textToCopy = "";
+                    
+                    // Collect all data from the section
+                    const sectionCard = this.closest('.card');
+                    const dataItems = sectionCard.querySelectorAll('.data-item');
+                    
+                    dataItems.forEach(item => {
+                        const label = item.querySelector('.data-label').textContent;
+                        const value = item.querySelector('.data-value').textContent.trim();
+                        textToCopy += `${label} ${value}\n`;
+                    });
+                    
+                    copyToClipboard(textToCopy);
+                    showCopiedTooltip();
+                });
+            });
+            
+            // Function to copy text to clipboard
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            }
+            
+            // Function to show "Copied" tooltip
+            function showCopiedTooltip() {
+                // Remove existing tooltip if it exists
+                const existingTooltip = document.querySelector('.copied-tooltip');
+                if (existingTooltip) {
+                    existingTooltip.remove();
+                }
+                
+                // Create new tooltip
+                const tooltip = document.createElement('div');
+                tooltip.classList.add('copied-tooltip');
+                tooltip.textContent = 'Copiado al portapapeles';
+                document.body.appendChild(tooltip);
+                
+                // Remove tooltip after animation
+                setTimeout(() => {
+                    tooltip.remove();
+                }, 1500);
+            }
+        });
+    </script>
+</body>
+</html>

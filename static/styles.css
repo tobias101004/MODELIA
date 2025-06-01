@@ -1,0 +1,211 @@
+/* Main styles for the 211 File Generator Application */
+
+/* Base styling */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.container {
+    max-width: 1140px;
+}
+
+h1, h2, h3, h4 {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+/* Card styling */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    border: none;
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: #e7f1ff;
+    border-bottom: 1px solid #d0e2ff;
+    padding: 1rem 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Step indicators */
+.steps-container {
+    position: relative;
+    counter-reset: step;
+}
+
+.step {
+    margin-bottom: 2.5rem;
+    position: relative;
+    padding-left: 3.5rem;
+}
+
+.step::before {
+    content: counter(step);
+    counter-increment: step;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    color: white;
+    text-align: center;
+    line-height: 2.5rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.3);
+}
+
+/* Form styling */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+.form-control, .form-select {
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* PDF content display */
+#pdfContent {
+    height: 300px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    font-size: 0.85rem;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+/* Loading spinner */
+#loadingSpinner {
+    display: none;
+    padding: 2rem 0;
+    text-align: center;
+}
+
+/* Tabs styling */
+.nav-tabs {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    margin-bottom: -1px;
+    border: 1px solid transparent;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    padding: 0.5rem 1rem;
+    color: #6c757d;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+    font-weight: 500;
+}
+
+/* Success message styling */
+.alert-success {
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+    color: #0f5132;
+    padding: 1.5rem;
+}
+
+.success-icon {
+    display: block;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-success:hover {
+    background-color: #157347;
+    border-color: #146c43;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+    padding: 0.6rem 1.5rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .step {
+        padding-left: 3rem;
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    h3 {
+        font-size: 1.3rem;
+    }
+}
+
+/* Download section */
+#downloadSection {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+#downloadLink {
+    text-decoration: none;
+    margin-bottom: 1rem;
+}

@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+jinja2
+httpx
+pdfminer.six
+pydantic
+unidecode
+python-multipart
