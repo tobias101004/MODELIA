@@ -5,3 +5,6 @@ builder = "nixpacks"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "never"
+
+[environments.production]
+variables = {}
