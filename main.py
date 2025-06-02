@@ -1,19 +1,11 @@
 """
 MODEL.IA - Integrated application for processing real estate documents
-<<<<<<< HEAD
-Fixed version with proper error handling and CORS support
-=======
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 """
 
 from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException, Body
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-<<<<<<< HEAD
-from fastapi.middleware.cors import CORSMiddleware
-=======
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 import uuid
 from pathlib import Path
 import logging
@@ -40,28 +32,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Create directories if they don't exist
-<<<<<<< HEAD
-for directory in ["temp", "static", "templates"]:
-=======
 for directory in ["temp", "static"]:
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
     Path(directory).mkdir(exist_ok=True)
 
 # FastAPI app
 app = FastAPI(title="MODEL.IA")
 
-<<<<<<< HEAD
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-=======
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -72,22 +48,6 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """Render the main page"""
-<<<<<<< HEAD
-    try:
-        return templates.TemplateResponse("index.html", {"request": request})
-    except Exception as e:
-        logger.error(f"Error rendering index page: {str(e)}")
-        return HTMLResponse("Error loading page", status_code=500)
-
-@app.get("/api", response_class=HTMLResponse)
-async def api_page(request: Request):
-    """Render the API configuration page"""
-    try:
-        return templates.TemplateResponse("api.html", {"request": request})
-    except Exception as e:
-        logger.error(f"Error rendering API page: {str(e)}")
-        return HTMLResponse("Error loading page", status_code=500)
-=======
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/cuenta", response_class=HTMLResponse)
@@ -99,61 +59,22 @@ async def cuenta(request: Request):
 async def contacto(request: Request):
     """Render the contact page"""
     return templates.TemplateResponse("contacto.html", {"request": request})
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 
 @app.get("/modelo-211", response_class=HTMLResponse)
 async def modelo_211(request: Request):
     """Render the modelo 211 page"""
-<<<<<<< HEAD
-    try:
-        return templates.TemplateResponse("modelo-211.html", {"request": request})
-    except Exception as e:
-        logger.error(f"Error rendering modelo-211 page: {str(e)}")
-        return HTMLResponse("Error loading page", status_code=500)
-=======
     return templates.TemplateResponse("modelo-211.html", {"request": request})
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 
 @app.get("/modelo-600", response_class=HTMLResponse)
 async def modelo_600(request: Request):
     """Render the modelo 600 page"""
-<<<<<<< HEAD
-    try:
-        return templates.TemplateResponse("modelo-600.html", {"request": request})
-    except Exception as e:
-        logger.error(f"Error rendering modelo-600 page: {str(e)}")
-        return HTMLResponse("Error loading page", status_code=500)
-=======
     return templates.TemplateResponse("modelo-600.html", {"request": request})
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 
 @app.get("/modelo-211-edit", response_class=HTMLResponse)
 async def modelo_211_edit(request: Request):
     """Render the modelo 211 edit page"""
     file_id = request.query_params.get("file_id", "")
     
-<<<<<<< HEAD
-    if not file_id:
-        return HTMLResponse("Missing file_id parameter", status_code=400)
-    
-    try:
-        # Load the extracted data from the file
-        data_path = Path("temp") / f"{file_id}_data.json"
-        if not data_path.exists():
-            return HTMLResponse("Data file not found", status_code=404)
-            
-        with open(data_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        
-        return templates.TemplateResponse("modelo-211-edit.html", {
-            "request": request,
-            "file_id": file_id,
-            "data": data
-        })
-    except Exception as e:
-        logger.error(f"Error loading data for modelo 211 edit: {str(e)}")
-        return HTMLResponse("Error loading data. Please try again.", status_code=500)
-=======
     try:
         # Load the extracted data from the file
         data_path = Path("temp") / f"{file_id}_data.json"
@@ -164,40 +85,21 @@ async def modelo_211_edit(request: Request):
     except Exception as e:
         logger.error(f"Error loading data for modelo 211 edit: {str(e)}")
         return HTMLResponse("Error loading data. Please try again.")
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 
 @app.get("/modelo-211-exito", response_class=HTMLResponse)
 async def modelo_211_exito(request: Request):
     """Render the modelo 211 success page"""
     file_id = request.query_params.get("file_id", "")
-<<<<<<< HEAD
-    return templates.TemplateResponse("modelo-211-exito.html", {
-        "request": request,
-        "file_id": file_id
-    })
-=======
     return templates.TemplateResponse("modelo-211-exito.html", {"request": request, "file_id": file_id})
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 
 @app.get("/modelo-600-resultados", response_class=HTMLResponse)
 async def modelo_600_resultados(request: Request):
     """Render the modelo 600 results page"""
     file_id = request.query_params.get("file_id", "")
     
-<<<<<<< HEAD
-    if not file_id:
-        return HTMLResponse("Missing file_id parameter", status_code=400)
-    
-    try:
-        data_path = Path("temp") / f"{file_id}_data.json"
-        if not data_path.exists():
-            return HTMLResponse("Data file not found", status_code=404)
-            
-=======
     # Load the extracted data from the file
     try:
         data_path = Path("temp") / f"{file_id}_data.json"
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
         with open(data_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         
@@ -205,20 +107,12 @@ async def modelo_600_resultados(request: Request):
         formatted_data = format_data_for_model_600(data)
         
         return templates.TemplateResponse(
-<<<<<<< HEAD
             "modelo-600-resultados.html",
-=======
-            "modelo-600-resultados.html", 
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
             {"request": request, "datos": formatted_data}
         )
     except Exception as e:
         logger.error(f"Error loading data for modelo 600 results: {str(e)}")
-<<<<<<< HEAD
-        return HTMLResponse("Error loading data. Please try again.", status_code=500)
-=======
         return HTMLResponse("Error loading data. Please try again.")
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 
 # API endpoints
 @app.post("/proceso_completo")
@@ -229,16 +123,6 @@ async def proceso_completo(
 ):
     """Process PDF file for modelo 211 and extract data"""
     try:
-<<<<<<< HEAD
-        # Validate file type
-        if not pdf_file.filename.lower().endswith('.pdf'):
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Solo se permiten archivos PDF"}
-            )
-        
-=======
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
         # Log request details for debugging
         logger.info(f"Received proceso_completo request with file: {pdf_file.filename}, provider: {ai_provider}")
         
@@ -260,15 +144,6 @@ async def proceso_completo(
             text_length = len(text)
             logger.info(f"Extracted {text_length} characters from PDF")
             
-<<<<<<< HEAD
-            if text_length < 100:
-                return JSONResponse(
-                    status_code=400,
-                    content={"error": "El PDF parece estar vacío o no contiene texto extraíble"}
-                )
-            
-=======
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
             # Save extracted text for debugging
             with open(Path("temp") / f"{file_id}_text.txt", "w", encoding="utf-8") as f:
                 f.write(text)
@@ -309,11 +184,7 @@ async def proceso_completo(
             )
         
     except Exception as e:
-<<<<<<< HEAD
-        logger.error(f"Unexpected error in proceso_completo: {str(e)}")
-=======
         logger.error(f"Unexpected error in process_pdf: {str(e)}")
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
         # Return error response
         return JSONResponse(
             status_code=500,
@@ -329,16 +200,6 @@ async def procesar_600(
 ):
     """Process PDF file for modelo 600 extraction"""
     try:
-<<<<<<< HEAD
-        # Validate file type
-        if not pdf_file.filename.lower().endswith('.pdf'):
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Solo se permiten archivos PDF"}
-            )
-        
-=======
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
         # Log request details for debugging
         logger.info(f"Received procesar_600 request with file: {pdf_file.filename}, provider: {ai_provider}")
         
@@ -360,15 +221,6 @@ async def procesar_600(
             text_length = len(text)
             logger.info(f"Extracted {text_length} characters from PDF")
             
-<<<<<<< HEAD
-            if text_length < 100:
-                return JSONResponse(
-                    status_code=400,
-                    content={"error": "El PDF parece estar vacío o no contiene texto extraíble"}
-                )
-            
-=======
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
             # Save extracted text for debugging
             with open(Path("temp") / f"{file_id}_text.txt", "w", encoding="utf-8") as f:
                 f.write(text)
@@ -390,16 +242,6 @@ async def procesar_600(
             with open(Path("temp") / f"{file_id}_data.json", "w", encoding="utf-8") as f:
                 json.dump(extracted_data, f, indent=2, ensure_ascii=False)
             
-<<<<<<< HEAD
-            # Debug logging
-            logger.info(f"Extracted data keys: {list(extracted_data.keys())}")
-            if 'compradores' in extracted_data:
-                logger.info(f"Compradores data: {extracted_data['compradores']}")
-            if 'valores' in extracted_data:
-                logger.info(f"Valores data: {extracted_data['valores']}")
-            
-=======
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
             if "error" in extracted_data:
                 logger.error(f"Error in AI extraction: {extracted_data['error']}")
                 return JSONResponse(
@@ -546,29 +388,6 @@ def format_data_for_model_600(extracted_data):
     
     return extracted_data
 
-<<<<<<< HEAD
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "message": "API is running"}
-
-# Cleanup function for startup
-@app.on_event("startup")
-async def startup_event():
-    """Clean temp directory on startup"""
-    logger.info("Starting up MODEL.IA application")
-    logger.info("Cleaning up temporary files on startup")
-    try:
-        for file in Path("temp").glob("*"):
-            if file.suffix in [".pdf", ".211", ".txt", ".json"]:
-                file.unlink()
-                logger.info(f"Deleted temporary file: {file}")
-    except Exception as e:
-        logger.error(f"Error cleaning temporary files: {str(e)}")
-
-=======
->>>>>>> e042e24fc2311fbacc4a45efd92355288a8cea04
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
