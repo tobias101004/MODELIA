@@ -80,9 +80,12 @@ def process():
     # API key del servidor
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key:
-        return jsonify({
-            "error": "API Key no configurada en el servidor."
-        }), 500
+        try:
+            import base64
+            cfg_path = MODELIA_DIR / "config" / "key.txt"
+            api_key = base64.b64decode(cfg_path.read_text().strip()).decode()
+        except Exception:
+            return jsonify({"error": "API Key no configurada en el servidor."}), 500
 
     # Guardar PDF en fichero temporal
     tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
