@@ -1,0 +1,93 @@
+;   Agencia Tributaria;;;;;
+;;;;;;
+Mod 211;;Diseño de registro (página 3);;;;
+vers. 1.0;;IRNR. Retención en la adquisición de bienes inmuebles a no residentes sin establecimiento permanente;;;;
+Nº;Posic.;Lon;Tipo;Descripción;Validación;Contenido
+1;1;2;An;Inicio del identificador de modelo y página;obligatorio;"Constante ""<T"""
+2;3;3;Num;Modelo;obligatorio;"Constante ""211"""
+3;6;3;Num;Página;obligatorio;"Constante ""030"""
+4;9;1;A;Fin de identificador de modelo;obligatorio;"Constante "">"""
+5;10;1;A;Indicador de página complementaria;obligatorio;C o blanco
+6;11;9;An;Datos del transmitente no residente. N.I.F.;;
+7;20;1;An;Datos del transmitente no residente. F/J ;;F, J o Blanco
+8;21;125;An;Datos del transmitente no residente. Apellidos y nombre, razón social o denominación;;
+9;146;1;An;Datos del transmitente no residente. C/O ;;C, O ó Blanco
+10;147;5;Num;Datos del transmitente no residente. Coef. Part % ;;3 ent. Y 2 dec.
+11;152;15;An;Datos del transmitente no residente. N.I.F. en el país de residencia;;
+12;167;8;Num;Datos del transmitente no residente. Fecha de nacimiento ;;DDMMAAAA
+13;175;30;An;Datos del transmitente no residente. Lugar de nacimiento. Ciudad;;
+14;205;2;An;Datos del transmitente no residente. Lugar de nacimiento. Código País;;
+15;207;2;An;Datos del transmitente no residente. Residencia fiscal. Código País;;
+16;209;50;An;Datos del transmitente no residente. Dirección en el país de residencia. Domicilio;;
+17;259;40;An;Datos del transmitente no residente. Dirección en el país de residencia. Datos complementarios del domicilio;;
+18;299;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Población/Ciudad;;
+19;329;10;An;Datos del transmitente no residente. Dirección en el país de residencia. Código Postal (ZIP);;
+20;339;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Provincia/Región/Estado;;
+21;369;2;An;Datos del transmitente no residente. Dirección en el país de residencia. Código País;;
+22;371;9;An;Datos del transmitente no residente. N.I.F.;;
+23;380;1;An;Datos del transmitente no residente. F/J ;;F, J o Blanco
+24;381;125;An;Datos del transmitente no residente. Apellidos y nombre, razón social o denominación;;
+25;506;1;An;Datos del transmitente no residente. C/O ;;C, O ó Blanco
+26;507;5;Num;Datos del transmitente no residente. Coef. Part % ;;3 ent. Y 2 dec.
+27;512;15;An;Datos del transmitente no residente. N.I.F. en el país de residencia;;
+28;527;8;Num;Datos del transmitente no residente. Fecha de nacimiento ;;DDMMAAAA
+29;535;30;An;Datos del transmitente no residente. Lugar de nacimiento. Ciudad;;
+30;565;2;An;Datos del transmitente no residente. Lugar de nacimiento. Código País;;
+31;567;2;An;Datos del transmitente no residente. Residencia fiscal. Código País;;
+32;569;50;An;Datos del transmitente no residente. Dirección en el país de residencia. Domicilio;;
+33;619;40;An;Datos del transmitente no residente. Dirección en el país de residencia. Datos complementarios del domicilio;;
+34;659;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Población/Ciudad;;
+35;689;10;An;Datos del transmitente no residente. Dirección en el país de residencia. Código Postal (ZIP);;
+36;699;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Provincia/Región/Estado;;
+37;729;2;An;Datos del transmitente no residente. Dirección en el país de residencia. Código País;;
+38;731;9;An;Datos del transmitente no residente. N.I.F.;;
+39;740;1;An;Datos del transmitente no residente. F/J ;;F, J o Blanco
+40;741;125;An;Datos del transmitente no residente. Apellidos y nombre, razón social o denominación;;
+41;866;1;An;Datos del transmitente no residente. C/O ;;C, O ó Blanco
+42;867;5;Num;Datos del transmitente no residente. Coef. Part % ;;3 ent. Y 2 dec.
+43;872;15;An;Datos del transmitente no residente. N.I.F. en el país de residencia;;
+44;887;8;Num;Datos del transmitente no residente. Fecha de nacimiento ;;DDMMAAAA
+45;895;30;An;Datos del transmitente no residente. Lugar de nacimiento. Ciudad;;
+46;925;2;An;Datos del transmitente no residente. Lugar de nacimiento. Código País;;
+47;927;2;An;Datos del transmitente no residente. Residencia fiscal. Código País;;
+48;929;50;An;Datos del transmitente no residente. Dirección en el país de residencia. Domicilio;;
+49;979;40;An;Datos del transmitente no residente. Dirección en el país de residencia. Datos complementarios del domicilio;;
+50;1019;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Población/Ciudad;;
+51;1049;10;An;Datos del transmitente no residente. Dirección en el país de residencia. Código Postal (ZIP);;
+52;1059;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Provincia/Región/Estado;;
+53;1089;2;An;Datos del transmitente no residente. Dirección en el país de residencia. Código País;;
+54;1091;9;An;Datos del transmitente no residente. N.I.F.;;
+55;1100;1;An;Datos del transmitente no residente. F/J ;;F, J o Blanco
+56;1101;125;An;Datos del transmitente no residente. Apellidos y nombre, razón social o denominación;;
+57;1226;1;An;Datos del transmitente no residente. C/O ;;C, O ó Blanco
+58;1227;5;Num;Datos del transmitente no residente. Coef. Part % ;;3 ent. Y 2 dec.
+59;1232;15;An;Datos del transmitente no residente. N.I.F. en el país de residencia;;
+60;1247;8;Num;Datos del transmitente no residente. Fecha de nacimiento ;;DDMMAAAA
+61;1255;30;An;Datos del transmitente no residente. Lugar de nacimiento. Ciudad;;
+62;1285;2;An;Datos del transmitente no residente. Lugar de nacimiento. Código País;;
+63;1287;2;An;Datos del transmitente no residente. Residencia fiscal. Código País;;
+64;1289;50;An;Datos del transmitente no residente. Dirección en el país de residencia. Domicilio;;
+65;1339;40;An;Datos del transmitente no residente. Dirección en el país de residencia. Datos complementarios del domicilio;;
+66;1379;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Población/Ciudad;;
+67;1409;10;An;Datos del transmitente no residente. Dirección en el país de residencia. Código Postal (ZIP);;
+68;1419;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Provincia/Región/Estado;;
+69;1449;2;An;Datos del transmitente no residente. Dirección en el país de residencia. Código País;;
+70;1451;9;An;Datos del transmitente no residente. N.I.F.;;
+71;1460;1;An;Datos del transmitente no residente. F/J ;;F, J o Blanco
+72;1461;125;An;Datos del transmitente no residente. Apellidos y nombre, razón social o denominación;;
+73;1586;1;An;Datos del transmitente no residente. C/O ;;C, O ó Blanco
+74;1587;5;Num;Datos del transmitente no residente. Coef. Part % ;;3 ent. Y 2 dec.
+75;1592;15;An;Datos del transmitente no residente. N.I.F. en el país de residencia;;
+76;1607;8;Num;Datos del transmitente no residente. Fecha de nacimiento ;;DDMMAAAA
+77;1615;30;An;Datos del transmitente no residente. Lugar de nacimiento. Ciudad;;
+78;1645;2;An;Datos del transmitente no residente. Lugar de nacimiento. Código País;;
+79;1647;2;An;Datos del transmitente no residente. Residencia fiscal. Código País;;
+80;1649;50;An;Datos del transmitente no residente. Dirección en el país de residencia. Domicilio;;
+81;1699;40;An;Datos del transmitente no residente. Dirección en el país de residencia. Datos complementarios del domicilio;;
+82;1739;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Población/Ciudad;;
+83;1769;10;An;Datos del transmitente no residente. Dirección en el país de residencia. Código Postal (ZIP);;
+84;1779;30;An;Datos del transmitente no residente. Dirección en el país de residencia. Provincia/Región/Estado;;
+85;1809;2;An;Datos del transmitente no residente. Dirección en el país de residencia. Código País;;
+86;1811;180;An;Reservado para la Administración ;;En blanco
+87;1991;10;An;Indicador de fin de registro ;obligatorio ;"Constante ""</T211030>"""
+Total:;;2000;;;;
