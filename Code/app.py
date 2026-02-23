@@ -38,6 +38,13 @@ from pdf_extractor import extraer_texto_pdf           # noqa: E402
 
 app = Flask(__name__, template_folder=str(MODELIA_DIR / "templates"))
 
+# Startup debug — shows in Railway deploy logs
+import logging
+logging.basicConfig(level=logging.INFO)
+_key = os.environ.get("OPENAI_API_KEY", "")
+logging.info(f"[MODELIA] OPENAI_API_KEY present: {bool(_key.strip())}, length: {len(_key)}")
+logging.info(f"[MODELIA] ENV keys with KEY/OPENAI: {[k for k in os.environ if 'KEY' in k or 'OPENAI' in k]}")
+
 
 @app.route("/")
 def landing():
