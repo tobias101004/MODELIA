@@ -25,7 +25,7 @@ from flask import Flask, jsonify, render_template, request, send_file
 MODELIA_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(MODELIA_DIR / "Code"))
 
-load_dotenv(MODELIA_DIR / ".env")
+load_dotenv(MODELIA_DIR / ".env", override=False)
 
 from llm_extractor import extraer_campos_llm          # noqa: E402
 from modelo211_generator import generar_modelo211     # noqa: E402
