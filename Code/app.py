@@ -25,7 +25,9 @@ from flask import Flask, jsonify, render_template, request, send_file
 MODELIA_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(MODELIA_DIR / "Code"))
 
-load_dotenv(MODELIA_DIR / ".env", override=False)
+env_file = MODELIA_DIR / ".env"
+if env_file.exists():
+    load_dotenv(env_file, override=False)
 
 from llm_extractor import extraer_campos_llm          # noqa: E402
 from modelo211_generator import generar_modelo211     # noqa: E402
@@ -45,6 +47,17 @@ def landing():
 @app.route("/app")
 def index():
     return render_template("generic.html")
+
+
+@app.route("/debug-env")
+def debug_env():
+    key = os.environ.get("OPENAI_API_KEY", "")
+    return jsonify({
+        "key_exists": bool(key.strip()),
+        "key_length": len(key),
+        "key_prefix": key[:10] + "..." if key else "(empty)",
+        "all_env_keys": [k for k in os.environ.keys() if "KEY" in k or "OPENAI" in k or "RAILWAY" in k],
+    })
 
 
 @app.route("/process", methods=["POST"])
