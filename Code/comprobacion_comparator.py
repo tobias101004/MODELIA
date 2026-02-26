@@ -2,6 +2,13 @@
 comprobacion_comparator.py
 Comparación determinista de datos extraídos de escritura, Modelo 211 y Modelo 600.
 Sin llamadas a LLM — 100% Python puro.
+
+IMPORTANTE: Las comparaciones son tolerantes con diferencias de formato.
+- Fechas: "29 de diciembre de 2025" == "29/12/2025" == "29122025"
+- Direcciones: "AVENIDA CASTELLON NUMERO 07" == "AV CASTELLON NR 07"
+- Nombres: sin tildes, mayúsculas, espacios colapsados
+- NIFs: sin espacios, guiones ni puntos
+- Importes: tolerancia de 0.02 EUR
 """
 
 import re
@@ -89,32 +96,212 @@ def _norm_amount(val) -> float:
         return 0.0
 
 
+# ── Date normalization (robust: handles text dates, numeric, mixed) ──────────
+
+_MESES = {
+    "enero": "01", "febrero": "02", "marzo": "03", "abril": "04",
+    "mayo": "05", "junio": "06", "julio": "07", "agosto": "08",
+    "septiembre": "09", "octubre": "10", "noviembre": "11", "diciembre": "12",
+    "january": "01", "february": "02", "march": "03", "april": "04",
+    "may": "05", "june": "06", "july": "07", "august": "08",
+    "september": "09", "october": "10", "november": "11", "december": "12",
+    # Abbreviations
+    "ene": "01", "feb": "02", "mar": "03", "abr": "04",
+    "jun": "06", "jul": "07", "ago": "08", "sep": "09", "sept": "09",
+    "oct": "10", "nov": "11", "dic": "12",
+    "jan": "01", "aug": "08", "dec": "12",
+}
+
+_NUM_SIMPLES = {
+    "un": 1, "uno": 1, "una": 1, "dos": 2, "tres": 3, "cuatro": 4,
+    "cinco": 5, "seis": 6, "siete": 7, "ocho": 8, "nueve": 9, "diez": 10,
+    "once": 11, "doce": 12, "trece": 13, "catorce": 14, "quince": 15,
+    "dieciseis": 16, "diecisiete": 17, "dieciocho": 18, "diecinueve": 19,
+    "veinte": 20, "veintiun": 21, "veintiuno": 21, "veintiuna": 21,
+    "veintidos": 22, "veintitres": 23, "veinticuatro": 24, "veinticinco": 25,
+    "veintiseis": 26, "veintisiete": 27, "veintiocho": 28, "veintinueve": 29,
+    "treinta": 30,
+}
+_NUM_DECENAS = {
+    "treinta": 30, "cuarenta": 40, "cincuenta": 50,
+    "sesenta": 60, "setenta": 70, "ochenta": 80, "noventa": 90,
+}
+_NUM_CENTENAS = {
+    "cien": 100, "ciento": 100,
+    "doscientos": 200, "doscientas": 200, "trescientos": 300, "trescientas": 300,
+    "cuatrocientos": 400, "cuatrocientas": 400, "quinientos": 500, "quinientas": 500,
+    "seiscientos": 600, "seiscientas": 600, "setecientos": 700, "setecientas": 700,
+    "ochocientos": 800, "ochocientas": 800, "novecientos": 900, "novecientas": 900,
+}
+
+def _palabras_a_entero(texto: str) -> int:
+    """Convierte número en palabras españolas a entero (días 1-31, años 1900-2099)."""
+    s = _ascii(texto).lower().strip()
+    s = re.sub(r'\b(del?|y|e)\b', ' ', s)
+    s = re.sub(r'\s+', ' ', s).strip()
+    tokens = s.split()
+    total = 0
+    for t in tokens:
+        if t == "mil":
+            total = (total if total else 1) * 1000
+        elif t in _NUM_CENTENAS:
+            total += _NUM_CENTENAS[t]
+        elif t in _NUM_DECENAS:
+            total += _NUM_DECENAS[t]
+        elif t in _NUM_SIMPLES:
+            total += _NUM_SIMPLES[t]
+    return total
+
+
 def _norm_date(val) -> str:
-    """Normaliza fecha a DDMMYYYY para comparación."""
+    """
+    Normaliza fecha a DDMMYYYY para comparación.
+    Handles:
+      - "29/12/2025", "29-12-2025", "29.12.2025"
+      - "2025-12-29" (ISO)
+      - "29122025" (already DDMMYYYY)
+      - "29 de diciembre de 2025"
+      - "a veintinueve de diciembre del dos mil veinticinco"
+      - "29 diciembre 2025"
+      - "December 29, 2025"
+    """
     if not val:
         return ""
     s = str(val).strip()
-    # Ya DDMMYYYY
+
+    # Already DDMMYYYY
     if re.fullmatch(r"\d{8}", s):
         return s
+
     # DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
     m = re.fullmatch(r"(\d{1,2})[/\-\.](\d{1,2})[/\-\.](\d{4})", s)
     if m:
         return f"{m.group(1).zfill(2)}{m.group(2).zfill(2)}{m.group(3)}"
-    # YYYY-MM-DD
+
+    # YYYY-MM-DD or YYYY/MM/DD (ISO)
     m = re.fullmatch(r"(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})", s)
     if m:
         return f"{m.group(3).zfill(2)}{m.group(2).zfill(2)}{m.group(1)}"
+
+    # Text-based: normalize to lowercase ASCII for pattern matching
+    sl = _ascii(s).lower().strip()
+
+    # "DD de MES de YYYY" or "DD MES YYYY" (Spanish/English month names)
+    for mes_nombre, mes_num in _MESES.items():
+        if mes_nombre not in sl:
+            continue
+        # Try "DD de MES de YYYY"
+        m = re.search(r"(\d{1,2})\s+(?:de\s+)?" + re.escape(mes_nombre) + r"\s+(?:de[l]?\s+)?(\d{4})", sl)
+        if m:
+            return f"{m.group(1).zfill(2)}{mes_num}{m.group(2)}"
+        # Try "MES DD, YYYY" (English style)
+        m = re.search(re.escape(mes_nombre) + r"\s+(\d{1,2}),?\s+(\d{4})", sl)
+        if m:
+            return f"{m.group(1).zfill(2)}{mes_num}{m.group(2)}"
+
+    # Fully written in words: "a veintinueve de diciembre del dos mil veinticinco"
+    for mes_nombre, mes_num in _MESES.items():
+        if not re.search(rf'\b{re.escape(mes_nombre)}\b', sl):
+            continue
+        partes = re.split(rf'\bde\s+{re.escape(mes_nombre)}\b', sl, maxsplit=1)
+        if len(partes) < 2:
+            partes = re.split(rf'\b{re.escape(mes_nombre)}\b', sl, maxsplit=1)
+        if len(partes) < 2:
+            continue
+        day_raw = partes[0].strip()
+        year_raw = partes[1].strip()
+        # Clean prefixes
+        day_raw = re.sub(r'^\b(a|el|la|en|los|las|al)\b\s*', '', day_raw).strip()
+        year_raw = re.sub(r'^de[l]?\s+', '', year_raw).strip()
+        year_raw = re.sub(r'[.,\s]+$', '', year_raw).strip()
+
+        # Day might be a number or words
+        dia = int(day_raw) if day_raw.isdigit() else _palabras_a_entero(day_raw)
+        # Year might be a number or words
+        anyo = int(year_raw) if year_raw.isdigit() else _palabras_a_entero(year_raw)
+        if 1 <= dia <= 31 and 1900 <= anyo <= 2099:
+            return f"{dia:02d}{mes_num}{anyo}"
+
     return _ascii(s).upper().strip()
 
 
+# ── Address normalization (robust: handles abbreviations vs full names) ──────
+
+# Map of common Spanish address abbreviations ↔ full forms
+# We normalize everything to the abbreviated form for comparison
+_ADDRESS_ABBREVS = {
+    # Via types
+    "AVENIDA": "AV", "AVDA": "AV", "AVD": "AV", "AVDA.": "AV", "AV.": "AV",
+    "CALLE": "CL", "C/": "CL", "C.": "CL", "C": "CL",
+    "PLAZA": "PZ", "PZA": "PZ", "PLZA": "PZ", "PL": "PZ",
+    "PASEO": "PS", "PSO": "PS", "PO": "PS",
+    "CAMINO": "CM", "CMO": "CM",
+    "CARRETERA": "CR", "CRTA": "CR", "CTRA": "CR",
+    "URBANIZACION": "URB", "URBANIZAC": "URB",
+    "TRAVESIA": "TR", "TRAV": "TR",
+    "RONDA": "RD",
+    "PASAJE": "PJ", "PSJE": "PJ",
+    "GLORIETA": "GL",
+    "PROLONGACION": "PROL",
+    "PARTIDA": "PTDA",
+    "LUGAR": "LG",
+    "BARRIO": "BO",
+    "SECTOR": "SC",
+    "PARCELA": "PC",
+    # Number indicators
+    "NUMERO": "N", "NUM": "N", "NR": "N", "NO": "N",
+    "NUM.": "N", "NR.": "N", "NO.": "N", "N.": "N",
+    # Floor/door
+    "PLANTA": "PL", "PISO": "PL",
+    "PUERTA": "PT", "PTA": "PT",
+    "ESCALERA": "ESC", "ESCAL": "ESC",
+    "BLOQUE": "BL", "BLQ": "BL",
+    "PORTAL": "PRT", "PORT": "PRT",
+    "BAJO": "BJ",
+    "ENTRESUELO": "ENT", "ENTRLO": "ENT",
+    "PRINCIPAL": "PRAL",
+    "DERECHA": "DCHA", "DRCHA": "DCHA",
+    "IZQUIERDA": "IZDA", "IZQDA": "IZDA", "IZQD": "IZDA",
+    # Without/no number
+    "SIN NUMERO": "SN", "S/N": "SN",
+}
+
+
 def _norm_address(val) -> str:
-    """Normaliza dirección: ASCII, mayúsculas, sin puntuación extra."""
+    """
+    Normaliza dirección: ASCII, mayúsculas, sin puntuación,
+    y reemplaza abreviaturas/formas completas por una forma canónica.
+    "AVENIDA CASTELLON NUMERO 07" == "AV CASTELLON NR 07" → "AV CASTELLON N 07"
+    """
     if not val:
         return ""
     s = _ascii(str(val)).upper().strip()
-    s = re.sub(r"[,.\-;:]+", " ", s)
-    return re.sub(r"\s+", " ", s).strip()
+    # Remove punctuation (commas, periods, dashes, semicolons, colons, slashes)
+    s = re.sub(r"[,.\-;:/]+", " ", s)
+    # Remove ordinal indicators
+    s = re.sub(r"\b(\d+)\s*(O|A|ER|ERO|ERA)\b", r"\1", s)
+    # Collapse whitespace
+    s = re.sub(r"\s+", " ", s).strip()
+
+    # Replace full forms and variant abbreviations with canonical short form
+    # Process multi-word replacements first (e.g., "SIN NUMERO" → "SN")
+    s = re.sub(r"\bSIN\s+NUMERO\b", "SN", s)
+
+    # Single-word replacements
+    tokens = s.split()
+    normalized = []
+    for token in tokens:
+        # Strip trailing period from token for matching
+        clean = token.rstrip(".")
+        if clean in _ADDRESS_ABBREVS:
+            normalized.append(_ADDRESS_ABBREVS[clean])
+        else:
+            normalized.append(token)
+
+    result = " ".join(normalized)
+    # Remove leading zeros from house numbers (07 → 7)
+    result = re.sub(r"\b0+(\d+)\b", r"\1", result)
+    return result
 
 
 def _norm_generic(val) -> str:
@@ -131,7 +318,9 @@ _NAME_FIELDS = {"comprador_nombre", "vendedor_nombre", "sujeto_pasivo_nombre", "
 _AMOUNT_FIELDS = {"importe_transmision", "porcentaje_retencion", "importe_retencion",
                   "resultado_ingresar", "base_imponible", "tipo_gravamen", "cuota_tributaria"}
 _DATE_FIELDS = {"fecha_operacion", "vendedor_fecha_nacimiento"}
-_ADDRESS_FIELDS = {"comprador_domicilio", "vendedor_domicilio", "inmueble_direccion"}
+_ADDRESS_FIELDS = {"comprador_domicilio", "vendedor_domicilio", "inmueble_direccion",
+                   "comprador_municipio", "inmueble_municipio", "comprador_provincia",
+                   "inmueble_provincia"}
 
 
 def _compare_field(campo: str, val_a, val_b) -> bool:
@@ -197,11 +386,6 @@ def _compare_pair(doc_a: dict, doc_b: dict, fields: list,
             continue
         # Skip if one is missing (only compare when both present)
         if (val_a is None or val_a == "") or (val_b is None or val_b == ""):
-            # Only flag if the model has a value but escritura doesn't, or vice versa
-            if val_a is not None and val_a != "" and (val_b is None or val_b == ""):
-                continue  # Source has value, model doesn't — might just not be in model
-            if val_b is not None and val_b != "" and (val_a is None or val_a == ""):
-                continue
             continue
         if not _compare_field(campo, val_a, val_b):
             campo_legible = FIELD_LABELS.get(campo, campo)

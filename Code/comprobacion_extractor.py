@@ -68,11 +68,21 @@ Instrucciones:
 1. Extrae SOLO datos que aparezcan claramente en el documento. Si un dato no está presente, omítelo.
 2. Para importes: extrae como número sin símbolo € (ej: 168000).
 3. Para nombres: MAYÚSCULAS sin tildes.
-4. Para fechas: extráelas tal cual aparecen (DD/MM/YYYY o en letras).
+4. FECHAS — MUY IMPORTANTE: Convierte SIEMPRE a formato DD/MM/YYYY con números.
+   - Si la fecha está escrita en letras ("a veintinueve de diciembre del dos mil veinticinco") → "29/12/2025"
+   - Si dice "29 de diciembre de 2025" → "29/12/2025"
+   - Si ya está en números, déjala tal cual.
+   Ejemplos: "uno de enero de dos mil veinticuatro" → "01/01/2024", "treinta y uno de marzo de dos mil veinticinco" → "31/03/2025"
 5. Para NIFs: incluye letra, sin espacios ni guiones.
 6. La referencia catastral tiene hasta 20 caracteres alfanuméricos.
 7. El vendedor (transmitente) suele ser no residente en España.
-8. El comprador (adquirente) suele ser residente en España."""
+8. El comprador (adquirente) suele ser residente en España.
+9. DIRECCIONES — MUY IMPORTANTE: Normaliza siempre usando abreviaturas estándar:
+   - AVENIDA/AVDA → AV, CALLE/C/ → CL, PLAZA/PZA → PZ, PASEO/PSO → PS
+   - NUMERO/NUM/NR → N, SIN NUMERO → S/N
+   - Ejemplo: "Avenida de Castellón número 7" → "AV CASTELLON N 7"
+   - Ejemplo: "Calle Gran Vía sin número" → "CL GRAN VIA S/N"
+   Escribe las direcciones en MAYÚSCULAS sin tildes."""
 
 
 # ── Schema: Modelo 211 ──────────────────────────────────────────────────────
@@ -109,7 +119,14 @@ Instrucciones:
 5. Para NIFs: incluye letra, sin espacios ni guiones.
 6. El porcentaje de retención habitual es 3%.
 7. El importe de retención = importe transmisión × porcentaje / 100.
-8. Para fechas: extrae tal cual aparecen."""
+8. FECHAS — MUY IMPORTANTE: Convierte SIEMPRE a formato DD/MM/YYYY con números.
+   - Si la fecha está escrita en letras → convierte a DD/MM/YYYY
+   - "29 de diciembre de 2025" → "29/12/2025"
+   - Si ya está en números, déjala como DD/MM/YYYY.
+9. DIRECCIONES — Normaliza usando abreviaturas estándar:
+   - AVENIDA/AVDA → AV, CALLE/C/ → CL, PLAZA/PZA → PZ, PASEO → PS
+   - NUMERO/NUM/NR → N, SIN NUMERO → S/N
+   - Escribe las direcciones en MAYÚSCULAS sin tildes."""
 
 
 # ── Schema: Modelo 600 ──────────────────────────────────────────────────────
@@ -147,7 +164,14 @@ Instrucciones:
 5. La base imponible suele coincidir con el precio de compraventa.
 6. El sujeto pasivo en TPO suele ser el comprador.
 7. Identifica si es TPO (Transmisiones Patrimoniales Onerosas) o AJD (Actos Jurídicos Documentados).
-8. Para fechas: extrae tal cual aparecen."""
+8. FECHAS — MUY IMPORTANTE: Convierte SIEMPRE a formato DD/MM/YYYY con números.
+   - Si la fecha está escrita en letras → convierte a DD/MM/YYYY
+   - "29 de diciembre de 2025" → "29/12/2025"
+   - Si ya está en números, déjala como DD/MM/YYYY.
+9. DIRECCIONES — Normaliza usando abreviaturas estándar:
+   - AVENIDA/AVDA → AV, CALLE/C/ → CL, PLAZA/PZA → PZ, PASEO → PS
+   - NUMERO/NUM/NR → N, SIN NUMERO → S/N
+   - Escribe las direcciones en MAYÚSCULAS sin tildes."""
 
 
 # ── Función genérica de extracción ───────────────────────────────────────────

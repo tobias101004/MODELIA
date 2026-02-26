@@ -798,12 +798,27 @@
       margin-bottom: 40px;
     }
 
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
+    .dashboard-carousel-wrapper {
+      position: relative;
       width: 100%;
-      max-width: 720px;
+      max-width: 820px;
+    }
+
+    .dashboard-carousel {
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px 0;
+      /* Hide scrollbar */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .dashboard-carousel::-webkit-scrollbar {
+      display: none;
     }
 
     .model-card {
@@ -815,11 +830,57 @@
       flex-direction: column;
       gap: 12px;
       transition: border-color var(--transition), box-shadow var(--transition);
+      min-width: 300px;
+      max-width: 340px;
+      flex-shrink: 0;
+      scroll-snap-align: center;
     }
 
     .model-card:hover {
       border-color: var(--blue);
       box-shadow: 0 4px 24px rgba(20, 61, 142, 0.08);
+    }
+
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: background var(--transition), border-color var(--transition), opacity var(--transition);
+    }
+
+    .carousel-arrow:hover {
+      background: var(--gray-50);
+      border-color: var(--blue);
+    }
+
+    .carousel-arrow.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .carousel-arrow-left {
+      left: -20px;
+    }
+
+    .carousel-arrow-right {
+      right: -20px;
+    }
+
+    .carousel-arrow svg {
+      width: 18px;
+      height: 18px;
+      color: var(--gray-600);
     }
 
     .model-card-number {
@@ -1170,8 +1231,8 @@
       #view-dashboard {
         padding: 32px 16px;
       }
-      .dashboard-grid {
-        grid-template-columns: 1fr;
+      .carousel-arrow {
+        display: none;
       }
       .account-layout { flex-direction:column; gap:24px; }
       .account-sidebar { width:100%; }
@@ -1327,34 +1388,46 @@
   <div id="view-dashboard">
     <h1 class="dashboard-title">Selecciona un modelo</h1>
     <p class="dashboard-subtitle">Elige el formulario que necesitas rellenar</p>
-    <div class="dashboard-grid">
-      <!-- Modelo 211 -->
-      <div class="model-card">
-        <div class="model-card-number">211</div>
-        <div class="model-card-title">Modelo 211</div>
-        <div class="model-card-subtitle">IRNR — Retención en la adquisición de bienes inmuebles a no residentes</div>
-        <span class="badge-soon">Escritura necesaria</span>
-        <button class="btn-primary" id="btn-start-211">Empezar</button>
-        <button class="card-how-link" id="btn-how-211" type="button">Como funciona?</button>
+    <div class="dashboard-carousel-wrapper">
+      <button class="carousel-arrow carousel-arrow-left hidden" id="carousel-left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <div class="dashboard-carousel" id="dashboard-carousel">
+        <!-- Modelo 211 -->
+        <div class="model-card">
+          <div class="model-card-number">211</div>
+          <div class="model-card-title">Modelo 211</div>
+          <div class="model-card-subtitle">IRNR — Retención en la adquisición de bienes inmuebles a no residentes</div>
+          <span class="badge-soon">Escritura necesaria</span>
+          <button class="btn-primary" id="btn-start-211">Empezar</button>
+          <button class="card-how-link" id="btn-how-211" type="button">Como funciona?</button>
+        </div>
+        <!-- Modelo 600 -->
+        <div class="model-card">
+          <div class="model-card-number">600</div>
+          <div class="model-card-title">Modelo 600</div>
+          <div class="model-card-subtitle">Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados</div>
+          <span class="badge-soon">Próximamente</span>
+          <button class="btn-primary" disabled>Empezar</button>
+          <button class="card-how-link" id="btn-how-600" type="button">Como funciona?</button>
+        </div>
+        <!-- Comprobación -->
+        <div class="model-card">
+          <div class="model-card-number">&#10003;</div>
+          <div class="model-card-title">Comprobación</div>
+          <div class="model-card-subtitle">Verifica escritura, Modelo 211 y Modelo 600</div>
+          <span class="badge-soon">3 PDFs necesarios</span>
+          <button class="btn-primary" id="btn-start-comprobacion">Empezar</button>
+          <button class="card-how-link" id="btn-how-comprobacion" type="button">Como funciona?</button>
+        </div>
       </div>
-      <!-- Modelo 600 -->
-      <div class="model-card">
-        <div class="model-card-number">600</div>
-        <div class="model-card-title">Modelo 600</div>
-        <div class="model-card-subtitle">Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados</div>
-        <span class="badge-soon">Próximamente</span>
-        <button class="btn-primary" disabled>Empezar</button>
-        <button class="card-how-link" id="btn-how-600" type="button">Como funciona?</button>
-      </div>
-      <!-- Comprobación -->
-      <div class="model-card">
-        <div class="model-card-number">&#10003;</div>
-        <div class="model-card-title">Comprobación</div>
-        <div class="model-card-subtitle">Verifica escritura, Modelo 211 y Modelo 600</div>
-        <span class="badge-soon">3 PDFs necesarios</span>
-        <button class="btn-primary" id="btn-start-comprobacion">Empezar</button>
-        <button class="card-how-link" id="btn-how-comprobacion" type="button">Como funciona?</button>
-      </div>
+      <button class="carousel-arrow carousel-arrow-right" id="carousel-right">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -2243,6 +2316,32 @@
       }
       setupHowModal('btn-how-211', 'modal-how-211', 'modal-how-211-close');
       setupHowModal('btn-how-600', 'modal-how-600', 'modal-how-600-close');
+
+      // ── Carousel arrows ───────────────────────────────────
+      var carousel      = document.getElementById('dashboard-carousel');
+      var arrowLeft     = document.getElementById('carousel-left');
+      var arrowRight    = document.getElementById('carousel-right');
+
+      function updateCarouselArrows() {
+        if (!carousel) return;
+        var scrollLeft = carousel.scrollLeft;
+        var maxScroll  = carousel.scrollWidth - carousel.clientWidth;
+        arrowLeft.classList.toggle('hidden', scrollLeft <= 5);
+        arrowRight.classList.toggle('hidden', scrollLeft >= maxScroll - 5);
+      }
+
+      if (carousel) {
+        carousel.addEventListener('scroll', updateCarouselArrows);
+        window.addEventListener('resize', updateCarouselArrows);
+        setTimeout(updateCarouselArrows, 100);
+
+        arrowLeft.addEventListener('click', function() {
+          carousel.scrollBy({ left: -340, behavior: 'smooth' });
+        });
+        arrowRight.addEventListener('click', function() {
+          carousel.scrollBy({ left: 340, behavior: 'smooth' });
+        });
+      }
 
       // ── Legal modals ──────────────────────────────────────
       var btnPrivacy       = document.getElementById('btn-privacy');
