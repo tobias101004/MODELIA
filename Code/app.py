@@ -33,6 +33,10 @@ from llm_extractor import extraer_campos_llm          # noqa: E402
 from modelo211_generator import generar_modelo211     # noqa: E402
 from normalizer import normalizar_datos               # noqa: E402
 from pdf_extractor import extraer_texto_pdf           # noqa: E402
+from comprobacion_extractor import (                  # noqa: E402
+    extraer_datos_escritura, extraer_datos_211, extraer_datos_600,
+)
+from comprobacion_comparator import comparar_documentos  # noqa: E402
 
 # ── App Flask ─────────────────────────────────────────────────────────────────
 
@@ -138,6 +142,67 @@ def process():
             Path(tmp.name).unlink(missing_ok=True)
         except Exception:
             pass
+
+
+@app.route("/comprobacion", methods=["POST"])
+def comprobacion():
+    # Validar que se reciben los 3 PDFs
+    for key in ("escritura", "modelo211", "modelo600"):
+        if key not in request.files:
+            return jsonify({"error": f"Falta el archivo: {key}"}), 400
+        if not request.files[key].filename.lower().endswith(".pdf"):
+            return jsonify({"error": f"El archivo '{key}' debe ser PDF."}), 400
+
+    # API key
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        try:
+            import base64
+            cfg_path = MODELIA_DIR / "config" / "key.txt"
+            api_key = base64.b64decode(cfg_path.read_text().strip()).decode()
+        except Exception:
+            return jsonify({"error": "API Key no configurada en el servidor."}), 500
+
+    tmp_paths = []
+    try:
+        # Guardar los 3 PDFs en temporales
+        textos = {}
+        for key in ("escritura", "modelo211", "modelo600"):
+            tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+            request.files[key].save(tmp.name)
+            tmp.close()
+            tmp_paths.append(tmp.name)
+
+            texto = extraer_texto_pdf(Path(tmp.name))
+            if len(texto.strip()) < 100:
+                return jsonify({
+                    "error": f"El PDF '{key}' tiene muy poco texto extraíble. "
+                             f"Puede ser un documento escaneado."
+                }), 422
+            textos[key] = texto
+
+        # 3 llamadas GPT-4o para extracción estructurada
+        datos_escritura = extraer_datos_escritura(textos["escritura"], api_key)
+        datos_211 = extraer_datos_211(textos["modelo211"], api_key)
+        datos_600 = extraer_datos_600(textos["modelo600"], api_key)
+
+        # Comparación determinista
+        resultado = comparar_documentos(datos_escritura, datos_211, datos_600)
+
+        return jsonify({
+            "ok": True,
+            "resultado": resultado,
+        })
+
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    finally:
+        for p in tmp_paths:
+            try:
+                Path(p).unlink(missing_ok=True)
+            except Exception:
+                pass
 
 
 @app.route("/download")
