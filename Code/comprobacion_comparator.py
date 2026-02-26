@@ -572,8 +572,24 @@ def comparar_documentos(escritura: dict, modelo211: dict, modelo600: dict) -> di
         if modelo211.get(c) and modelo600.get(c)
     )
 
+    # ── Deduplicate: merge discrepancies about the same field + same values ──
+    # If "importe_transmision" is wrong in both 211 and 600 (same expected/found),
+    # show it once with a combined label like "Escritura vs Modelo 211, Modelo 600"
+    seen = {}  # key: (campo, valor_esperado, valor_encontrado) → index in deduped
+    deduped = []
+    for d in discrepancias:
+        key = (d["campo"], d.get("valor_esperado", ""), d.get("valor_encontrado", ""))
+        if key in seen:
+            # Merge: append the comparison label
+            existing = deduped[seen[key]]
+            if d["comparacion"] not in existing["comparacion"]:
+                existing["comparacion"] += " / " + d["comparacion"]
+        else:
+            seen[key] = len(deduped)
+            deduped.append(dict(d))  # copy so we don't mutate originals
+
     return {
-        "ok": len(discrepancias) == 0,
+        "ok": len(deduped) == 0,
         "total_campos_verificados": campos_verificados,
-        "discrepancias": discrepancias,
+        "discrepancias": deduped,
     }

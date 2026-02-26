@@ -1920,7 +1920,20 @@
       }
 
       // ── View switching ──
+      var _appAlreadyShown = false;
+
       function showApp(user) {
+        // If app is already shown (user is logged in and using the app),
+        // only update user info — do NOT reset the current view.
+        // This prevents token refresh (onAuthStateChange) from
+        // wiping progress when the user switches tabs/windows.
+        if (_appAlreadyShown) {
+          accountEmail.textContent = user.email;
+          window._currentUserEmail = user.email;
+          return;
+        }
+        _appAlreadyShown = true;
+
         viewAuth.classList.add('hidden');
         mainContent.classList.remove('visible');
         viewAccount.classList.remove('visible');
@@ -1933,6 +1946,7 @@
       }
 
       function showLogin() {
+        _appAlreadyShown = false;
         viewAuth.classList.remove('hidden');
         viewDashboard.classList.remove('visible');
         viewAccount.classList.remove('visible');
