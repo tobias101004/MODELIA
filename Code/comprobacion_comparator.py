@@ -76,6 +76,45 @@ def _norm_name(val) -> str:
     return re.sub(r"\s+", " ", _ascii(str(val)).upper().strip())
 
 
+def _name_tokens(val) -> set:
+    """
+    Extrae el conjunto de palabras de un nombre, ignorando orden y puntuación.
+    "POULSEN, RICHARDT" → {"POULSEN", "RICHARDT"}
+    "RICHARDT POULSEN"  → {"POULSEN", "RICHARDT"}
+    "MARK-THOMAS PERKINS" → {"MARK", "THOMAS", "PERKINS"}
+    "PERKINS, MARK THOMAS" → {"PERKINS", "MARK", "THOMAS"}
+    """
+    if not val:
+        return set()
+    s = _ascii(str(val)).upper().strip()
+    # Remove commas, hyphens, dots — split into individual words
+    s = re.sub(r"[,.\-;:]+", " ", s)
+    tokens = set(re.sub(r"\s+", " ", s).strip().split())
+    # Remove trivial words that don't identify the person
+    tokens.discard("DE")
+    tokens.discard("DEL")
+    tokens.discard("LA")
+    tokens.discard("LOS")
+    tokens.discard("LAS")
+    return tokens
+
+
+def _compare_names(val_a, val_b) -> bool:
+    """
+    Compara nombres de forma flexible:
+    - Ignora orden (surname first vs name first)
+    - Ignora comas, guiones
+    - "RICHARDT POULSEN" == "POULSEN, RICHARDT" → True
+    - "MARK-THOMAS PERKINS" == "PERKINS, MARK THOMAS" → True
+    - "VALENTIN CONCEJO ARRANZ" == "CONCEJO ARRANZ VALENTIN" → True
+    """
+    # First try exact match after basic normalization
+    if _norm_name(val_a) == _norm_name(val_b):
+        return True
+    # Then compare as sets of name tokens (order-independent)
+    return _name_tokens(val_a) == _name_tokens(val_b)
+
+
 def _norm_amount(val) -> float:
     """Normaliza importe a float."""
     if val is None or val == "":
@@ -271,27 +310,18 @@ def _norm_address(val) -> str:
     """
     Normaliza dirección: ASCII, mayúsculas, sin puntuación,
     y reemplaza abreviaturas/formas completas por una forma canónica.
-    "AVENIDA CASTELLON NUMERO 07" == "AV CASTELLON NR 07" → "AV CASTELLON N 07"
     """
     if not val:
         return ""
     s = _ascii(str(val)).upper().strip()
-    # Remove punctuation (commas, periods, dashes, semicolons, colons, slashes)
     s = re.sub(r"[,.\-;:/]+", " ", s)
-    # Remove ordinal indicators
     s = re.sub(r"\b(\d+)\s*(O|A|ER|ERO|ERA)\b", r"\1", s)
-    # Collapse whitespace
     s = re.sub(r"\s+", " ", s).strip()
-
-    # Replace full forms and variant abbreviations with canonical short form
-    # Process multi-word replacements first (e.g., "SIN NUMERO" → "SN")
     s = re.sub(r"\bSIN\s+NUMERO\b", "SN", s)
 
-    # Single-word replacements
     tokens = s.split()
     normalized = []
     for token in tokens:
-        # Strip trailing period from token for matching
         clean = token.rstrip(".")
         if clean in _ADDRESS_ABBREVS:
             normalized.append(_ADDRESS_ABBREVS[clean])
@@ -299,16 +329,79 @@ def _norm_address(val) -> str:
             normalized.append(token)
 
     result = " ".join(normalized)
-    # Remove leading zeros from house numbers (07 → 7)
     result = re.sub(r"\b0+(\d+)\b", r"\1", result)
     return result
 
 
+def _address_tokens(val) -> set:
+    """Extract meaningful tokens from an address for flexible comparison."""
+    if not val:
+        return set()
+    s = _norm_address(val)
+    tokens = set(s.split())
+    # Remove filler words
+    for w in ("DE", "DEL", "LA", "LOS", "LAS", "EL", "EN", "A"):
+        tokens.discard(w)
+    return tokens
+
+
+def _compare_addresses(val_a, val_b) -> bool:
+    """
+    Compara direcciones de forma flexible.
+    - Normaliza abreviaturas
+    - Si una dirección es un subconjunto de la otra → OK (one is more complete)
+    - Only flags if there's a clear difference in the core components
+      (street name, number differ)
+
+    Examples that should NOT be flagged:
+    - "AV LA CORNISA N 7" vs "AV CORNISA NUM 7 C 04 25 PUERTO PLATA 425-C"
+      → Same street & number, one just has more detail
+    - "THE CHERRY ORCHARD" vs "THE CHERRY ORCHARD, KILLINCARRIG, DELGANY"
+      → Subset
+    """
+    # Exact match after normalization
+    norm_a = _norm_address(val_a)
+    norm_b = _norm_address(val_b)
+    if norm_a == norm_b:
+        return True
+
+    # Check if one is contained in the other (one is more detailed)
+    if norm_a in norm_b or norm_b in norm_a:
+        return True
+
+    # Token-based: if the shorter set is a subset of the longer, it's just
+    # a matter of one being more complete
+    tokens_a = _address_tokens(val_a)
+    tokens_b = _address_tokens(val_b)
+
+    if not tokens_a or not tokens_b:
+        return True  # one is empty, skip
+
+    # If the smaller set is a subset of the larger → OK
+    if tokens_a.issubset(tokens_b) or tokens_b.issubset(tokens_a):
+        return True
+
+    # Check overlap: if >70% of the smaller set overlaps with the larger,
+    # it's likely the same address with format differences
+    smaller = tokens_a if len(tokens_a) <= len(tokens_b) else tokens_b
+    larger = tokens_b if len(tokens_a) <= len(tokens_b) else tokens_a
+    overlap = smaller & larger
+    if len(overlap) >= len(smaller) * 0.7:
+        return True
+
+    return False
+
+
 def _norm_generic(val) -> str:
-    """Normalización genérica: ASCII, mayúsculas, trim."""
+    """Normalización genérica: ASCII, mayúsculas, trim, strip leading zeros from numbers."""
     if not val:
         return ""
-    return _ascii(str(val)).upper().strip()
+    s = _ascii(str(val)).upper().strip()
+    # If value is purely numeric (possibly with leading zeros), normalize
+    # e.g. "02914" → "2914"
+    if re.fullmatch(r"0*\d+", s):
+        s = s.lstrip("0") or "0"
+    return s
 
 
 # ── Tipos de campo y su normalizador ────────────────────────────────────────
@@ -328,13 +421,13 @@ def _compare_field(campo: str, val_a, val_b) -> bool:
     if campo in _NIF_FIELDS:
         return _norm_nif(val_a) == _norm_nif(val_b)
     if campo in _NAME_FIELDS:
-        return _norm_name(val_a) == _norm_name(val_b)
+        return _compare_names(val_a, val_b)
     if campo in _AMOUNT_FIELDS:
         return abs(_norm_amount(val_a) - _norm_amount(val_b)) < 0.02
     if campo in _DATE_FIELDS:
         return _norm_date(val_a) == _norm_date(val_b)
     if campo in _ADDRESS_FIELDS:
-        return _norm_address(val_a) == _norm_address(val_b)
+        return _compare_addresses(val_a, val_b)
     return _norm_generic(val_a) == _norm_generic(val_b)
 
 
