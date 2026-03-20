@@ -51,11 +51,6 @@ logging.info(f"[MODELIA] ENV keys with KEY/OPENAI: {[k for k in os.environ if 'K
 
 
 @app.route("/")
-def landing():
-    return render_template("landing.html")
-
-
-@app.route("/app")
 def index():
     return render_template("generic.html")
 

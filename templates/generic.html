@@ -358,7 +358,8 @@
     }
 
     /* ── Dropzone ──────────────────────────────────────── */
-    #dropzone {
+    #dropzone,
+    #audit-csv-dropzone {
       border: 2px dashed var(--gray-200);
       border-radius: var(--radius-lg);
       padding: 56px 24px;
@@ -369,12 +370,14 @@
       background: var(--gray-50);
     }
 
-    #dropzone:hover {
+    #dropzone:hover,
+    #audit-csv-dropzone:hover {
       background: var(--blue-muted);
       border-color: var(--blue);
     }
 
-    #dropzone.over {
+    #dropzone.over,
+    #audit-csv-dropzone.over {
       background: rgba(20, 61, 142, 0.06);
       border-color: var(--blue);
     }
@@ -391,7 +394,8 @@
       transition: background var(--transition);
     }
 
-    #dropzone:hover .dz-icon {
+    #dropzone:hover .dz-icon,
+    #audit-csv-dropzone:hover .dz-icon {
       background: rgba(20, 61, 142, 0.1);
     }
 
@@ -1206,6 +1210,299 @@
       border-radius: 8px;
     }
 
+    /* ── Auditoría Hojas de Visita ──────────────────── */
+    #view-auditoria {
+      display: none;
+      padding: 60px 24px 40px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    #view-auditoria.visible { display: block; }
+
+    .audit-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .audit-header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--blue);
+      margin: 0;
+    }
+
+    .audit-session-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+    .audit-session-row:hover {
+      border-color: var(--blue);
+      box-shadow: 0 2px 12px rgba(20, 61, 142, 0.08);
+    }
+    .audit-session-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .audit-session-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 4px;
+    }
+    .audit-session-name input {
+      font: inherit;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      padding: 2px 8px;
+      width: 260px;
+    }
+    .audit-session-date {
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+    .audit-status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: var(--radius-pill);
+      white-space: nowrap;
+    }
+    .audit-status-badge.complete {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .audit-status-badge.partial {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+    .audit-status-badge.pending {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .audit-empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--gray-500);
+      font-size: 14px;
+    }
+
+    /* Upload sub-view */
+    .audit-upload-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+    }
+    .audit-upload-card h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--blue);
+      margin: 0 0 8px;
+    }
+    .audit-upload-card p {
+      font-size: 13px;
+      color: var(--gray-600);
+      margin: 0 0 20px;
+    }
+    .audit-dropzone {
+      border: 2px dashed var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition);
+      background: var(--gray-50);
+      user-select: none;
+    }
+    .audit-dropzone:hover {
+      background: var(--blue-muted);
+      border-color: var(--blue);
+    }
+    .audit-dropzone.over {
+      background: rgba(20, 61, 142, 0.06);
+      border-color: var(--blue);
+    }
+    .audit-csv-preview {
+      margin-top: 20px;
+      max-height: 300px;
+      overflow: auto;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+    }
+    .audit-csv-preview table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .audit-csv-preview th,
+    .audit-csv-preview td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--gray-100);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .audit-csv-preview th {
+      background: var(--gray-50);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+    .audit-csv-summary {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: var(--blue-muted);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--blue);
+    }
+
+    /* Detail sub-view */
+    .audit-detail-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+    }
+    .audit-detail-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .audit-detail-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--blue);
+      margin: 0;
+    }
+    .audit-comercial-group {
+      margin-bottom: 28px;
+    }
+    .audit-comercial-group h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin: 0 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--blue);
+    }
+    .audit-check-card {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 10px;
+    }
+    .audit-check-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .audit-check-field {
+      font-size: 12px;
+    }
+    .audit-check-field strong {
+      display: block;
+      color: var(--gray-500);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 2px;
+    }
+    .audit-check-field span {
+      color: var(--gray-900);
+      font-weight: 500;
+    }
+    .audit-check-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .audit-check-actions .btn-primary {
+      font-size: 12px;
+      padding: 6px 14px;
+    }
+    .audit-btn-secondary {
+      font-size: 12px;
+      padding: 6px 14px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-md);
+      background: var(--white);
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .audit-btn-secondary:hover {
+      background: var(--gray-50);
+    }
+    .audit-btn-danger {
+      font-size: 12px;
+      padding: 6px 14px;
+      border: 1px solid #fca5a5;
+      border-radius: var(--radius-md);
+      background: #fef2f2;
+      color: #991b1b;
+      cursor: pointer;
+    }
+    .audit-check-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .audit-check-status.verified { color: #166534; }
+    .audit-check-status.uploaded { color: var(--blue); }
+    .audit-check-status.not_found { color: #991b1b; }
+    .audit-check-status.pending { color: var(--gray-500); }
+    .audit-file-info {
+      font-size: 12px;
+      color: var(--gray-600);
+      margin-bottom: 8px;
+    }
+    .audit-mini-dropzone {
+      border: 2px dashed var(--gray-200);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--gray-500);
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .audit-mini-dropzone:hover {
+      background: var(--blue-muted);
+      border-color: var(--blue);
+    }
+    .audit-mini-dropzone.over {
+      background: rgba(20, 61, 142, 0.06);
+      border-color: var(--blue);
+    }
+    .audit-notes-input {
+      width: 100%;
+      font: inherit;
+      font-size: 12px;
+      padding: 6px 10px;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      margin-top: 6px;
+    }
+
     /* ── Responsive ──────────────────────────────────── */
     @media (max-width: 768px) {
       .header {
@@ -1282,6 +1579,16 @@
         <div class="auth-success" id="forgot-success"></div>
         <button class="btn-primary" type="submit" id="forgot-submit">Enviar enlace de recuperacion</button>
         <button class="auth-back-link visible" type="button" id="btn-back-login">Volver a iniciar sesion</button>
+      </form>
+
+      <!-- Reset password form (shown after clicking recovery link from email) -->
+      <form class="auth-form" id="reset-form" novalidate style="display:none;">
+        <p style="font-size:13px;color:var(--gray-600);margin:0 0 16px;">Introduce tu nueva contrasena.</p>
+        <input class="auth-input" type="password" id="reset-password" placeholder="Nueva contrasena" required autocomplete="new-password">
+        <input class="auth-input" type="password" id="reset-password-confirm" placeholder="Confirmar contrasena" required autocomplete="new-password">
+        <div class="auth-error" id="reset-error"></div>
+        <div class="auth-success" id="reset-success"></div>
+        <button class="btn-primary" type="submit" id="reset-submit">Cambiar contrasena</button>
       </form>
     </div>
   </div>
@@ -1384,6 +1691,33 @@
     </div>
   </div>
 
+  <!-- How it works Modal — Auditoria -->
+  <div class="modal-overlay" id="modal-how-auditoria">
+    <div class="modal-box" style="max-width:520px;">
+      <h2>Auditoria Visitas — Como funciona</h2>
+      <div class="legal-text" style="max-height:none;">
+        <p><strong>Verifica que tu equipo comercial recoge las hojas de visita correctamente.</strong></p>
+        <br>
+        <p>Cada mes, el equipo comercial realiza decenas de visitas a propiedades con clientes. Es importante asegurarse de que se recoge la hoja de visita firmada en cada una de ellas.</p>
+        <br>
+        <p><strong>El proceso de auditoria es sencillo:</strong></p>
+        <br>
+        <p>1. <strong>Sube el CSV de visitas del ultimo mes</strong> exportado desde el CRM. El sistema lo procesa automaticamente.</p>
+        <br>
+        <p>2. <strong>Se seleccionan 2 visitas aleatorias</strong>, excluyendo las visitas canceladas. Esta seleccion aleatoria garantiza una auditoria justa.</p>
+        <br>
+        <p>3. <strong>Sube la hoja de visita correspondiente</strong> (PDF o imagen) para cada visita seleccionada. Puedes hacerlo en cualquier momento.</p>
+        <br>
+        <p>4. <strong>Marca cada hoja como verificada</strong> o indica si no se encontro. El estado de la auditoria se actualiza automaticamente.</p>
+        <br>
+        <p><strong>Control total sobre la recogida de hojas de visita.</strong></p>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn-close" id="modal-how-auditoria-close">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Dashboard — model selector shown after login -->
   <div id="view-dashboard">
     <h1 class="dashboard-title">Selecciona un modelo</h1>
@@ -1421,6 +1755,21 @@
           <span class="badge-soon">3 PDFs necesarios</span>
           <button class="btn-primary" id="btn-start-comprobacion">Empezar</button>
           <button class="card-how-link" id="btn-how-comprobacion" type="button">Como funciona?</button>
+        </div>
+        <!-- Auditoría Hojas de Visita -->
+        <div class="model-card">
+          <div class="model-card-number">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+              <path d="M9 14l2 2 4-4"/>
+            </svg>
+          </div>
+          <div class="model-card-title">Auditoria Visitas</div>
+          <div class="model-card-subtitle">Verificacion aleatoria de hojas de visita del equipo comercial</div>
+          <span class="badge-soon">CSV necesario</span>
+          <button class="btn-primary" id="btn-start-auditoria">Empezar</button>
+          <button class="card-how-link" id="btn-how-auditoria" type="button">Como funciona?</button>
         </div>
       </div>
       <button class="carousel-arrow carousel-arrow-right" id="carousel-right">
@@ -1800,6 +2149,74 @@
     </div>
   </div>
 
+  <!-- Auditoría Hojas de Visita view -->
+  <div id="view-auditoria">
+    <button class="btn-back-dashboard" id="btn-back-dashboard-audit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Volver al dashboard
+    </button>
+
+    <!-- Sub-view A: Session list -->
+    <div id="auditoria-list">
+      <div class="audit-header">
+        <h1>Auditoria Hojas de Visita</h1>
+        <button class="btn-primary" id="audit-btn-new">Nueva Auditoria</button>
+      </div>
+      <div id="audit-sessions-container">
+        <div class="audit-empty" id="audit-empty-msg">No hay auditorias todavia. Crea una nueva para empezar.</div>
+      </div>
+    </div>
+
+    <!-- Sub-view B: CSV upload -->
+    <div id="auditoria-upload" style="display:none;">
+      <div class="modelo-page-card">
+        <div class="modelo-page-header">
+          <div class="modelo-page-title">Nueva Auditoria</div>
+          <div class="modelo-page-subtitle">Sube el CSV de visitas del ultimo mes exportado desde el CRM. Se seleccionaran 2 visitas aleatorias para auditar.</div>
+        </div>
+
+        <div class="modelo-divider"></div>
+
+        <div id="audit-csv-dropzone">
+          <div class="dz-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div class="dz-label">Arrastra el CSV aqui</div>
+          <div class="dz-hint">o <span>selecciona un archivo</span> &middot; CSV</div>
+          <input type="file" id="audit-csv-input" accept=".csv" style="display:none">
+        </div>
+
+        <div id="audit-csv-preview-wrap" style="display:none;">
+          <div class="audit-csv-preview" id="audit-csv-preview"></div>
+          <div class="audit-csv-summary" id="audit-csv-summary"></div>
+          <div style="margin-top:16px; display:flex; gap:10px;">
+            <button class="btn-primary" id="audit-btn-process">Procesar y seleccionar visitas</button>
+            <button class="audit-btn-secondary" id="audit-btn-cancel-csv">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-view C: Session detail -->
+    <div id="auditoria-detail" style="display:none;">
+      <div class="audit-detail-card">
+        <div class="audit-detail-header">
+          <h2 id="audit-detail-name">Auditoria</h2>
+          <div>
+            <span class="audit-status-badge" id="audit-detail-status"></span>
+          </div>
+        </div>
+        <div id="audit-checks-container"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="app-footer" id="app-footer">
     <div class="footer-links">
@@ -1939,6 +2356,8 @@
         viewAccount.classList.remove('visible');
         var vc = document.getElementById('view-comprobacion');
         if (vc) vc.classList.remove('visible');
+        var va = document.getElementById('view-auditoria');
+        if (va) va.classList.remove('visible');
         viewDashboard.classList.add('visible');
         headerButtons.classList.add('visible');
         accountEmail.textContent = user.email;
@@ -1953,6 +2372,8 @@
         mainContent.classList.remove('visible');
         var vc = document.getElementById('view-comprobacion');
         if (vc) vc.classList.remove('visible');
+        var va = document.getElementById('view-auditoria');
+        if (va) va.classList.remove('visible');
         headerButtons.classList.remove('visible');
         accountEmail.textContent = '';
         window._currentUserEmail = '';
@@ -2096,6 +2517,82 @@
         });
       });
 
+      // ── Password reset form (after clicking email link) ──
+      var resetForm     = document.getElementById('reset-form');
+      var resetPassword = document.getElementById('reset-password');
+      var resetConfirm  = document.getElementById('reset-password-confirm');
+      var resetError    = document.getElementById('reset-error');
+      var resetSuccess  = document.getElementById('reset-success');
+      var resetSubmit   = document.getElementById('reset-submit');
+
+      function showPasswordResetForm() {
+        _appAlreadyShown = false;
+        authForm.style.display = 'none';
+        authTabs.style.display = 'none';
+        forgotForm.style.display = 'none';
+        resetForm.style.display = '';
+        viewAuth.classList.remove('hidden');
+        viewDashboard.classList.remove('visible');
+        mainContent.classList.remove('visible');
+        viewAccount.classList.remove('visible');
+        var vc = document.getElementById('view-comprobacion');
+        if (vc) vc.classList.remove('visible');
+        var va = document.getElementById('view-auditoria');
+        if (va) va.classList.remove('visible');
+        headerButtons.classList.remove('visible');
+      }
+
+      resetForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        resetError.classList.remove('visible');
+        resetSuccess.classList.remove('visible');
+
+        var pw = resetPassword.value;
+        var pw2 = resetConfirm.value;
+
+        if (!pw || pw.length < 6) {
+          resetError.textContent = 'La contrasena debe tener al menos 6 caracteres.';
+          resetError.classList.add('visible');
+          return;
+        }
+        if (pw !== pw2) {
+          resetError.textContent = 'Las contrasenas no coinciden.';
+          resetError.classList.add('visible');
+          return;
+        }
+
+        resetSubmit.disabled = true;
+        resetSubmit.textContent = 'Actualizando...';
+
+        sb.auth.updateUser({ password: pw }).then(function(result) {
+          resetSubmit.disabled = false;
+          resetSubmit.textContent = 'Cambiar contrasena';
+
+          if (result.error) {
+            resetError.textContent = result.error.message;
+            resetError.classList.add('visible');
+            return;
+          }
+
+          resetSuccess.textContent = 'Contrasena actualizada correctamente. Redirigiendo...';
+          resetSuccess.classList.add('visible');
+          setTimeout(function() {
+            _isPasswordRecovery = false;
+            resetForm.style.display = 'none';
+            resetPassword.value = '';
+            resetConfirm.value = '';
+            resetError.classList.remove('visible');
+            resetSuccess.classList.remove('visible');
+            showApp(result.data.user);
+          }, 2000);
+        }).catch(function(err) {
+          resetSubmit.disabled = false;
+          resetSubmit.textContent = 'Cambiar contrasena';
+          resetError.textContent = 'Error: ' + err.message;
+          resetError.classList.add('visible');
+        });
+      });
+
       // ── Logout ──
       var modalLogout        = document.getElementById('modal-logout');
       var modalLogoutCancel  = document.getElementById('modal-logout-cancel');
@@ -2122,7 +2619,16 @@
       });
 
       // ── Auth state listener — single source of truth for view switching ──
+      var _isPasswordRecovery = false;
+
       sb.auth.onAuthStateChange(function(event, session) {
+        if (event === 'PASSWORD_RECOVERY') {
+          _isPasswordRecovery = true;
+          showPasswordResetForm();
+          return;
+        }
+        // If we're in recovery flow, don't let SIGNED_IN redirect to app
+        if (_isPasswordRecovery) return;
         if (session && session.user) {
           showApp(session.user);
         } else {
@@ -2202,6 +2708,8 @@
         appMainContentEl.classList.remove('visible');
         var vc = document.getElementById('view-comprobacion');
         if (vc) vc.classList.remove('visible');
+        var va = document.getElementById('view-auditoria');
+        if (va) va.classList.remove('visible');
         viewDashboardEl.classList.add('visible');
       }
 
@@ -2210,6 +2718,8 @@
         appMainContentEl.classList.remove('visible');
         var vc = document.getElementById('view-comprobacion');
         if (vc) vc.classList.remove('visible');
+        var va = document.getElementById('view-auditoria');
+        if (va) va.classList.remove('visible');
         viewAccountEl.classList.add('visible');
         accountEmailSpan.textContent = window._currentUserEmail || '';
       }
@@ -2303,6 +2813,8 @@
         viewAccountEl.classList.remove('visible');
         var vc = document.getElementById('view-comprobacion');
         if (vc) vc.classList.remove('visible');
+        var va = document.getElementById('view-auditoria');
+        if (va) va.classList.remove('visible');
         appMainContent.classList.add('visible');
       });
 
@@ -2312,6 +2824,8 @@
         viewAccountEl.classList.remove('visible');
         var vc = document.getElementById('view-comprobacion');
         if (vc) vc.classList.remove('visible');
+        var va = document.getElementById('view-auditoria');
+        if (va) va.classList.remove('visible');
         // Reset upload state
         clearFile();
         hideError();
@@ -2469,6 +2983,8 @@
         viewDashboard.classList.remove('visible');
         viewAccountEl.classList.remove('visible');
         appMainContent.classList.remove('visible');
+        var va = document.getElementById('view-auditoria');
+        if (va) va.classList.remove('visible');
         viewComprobacion.classList.add('visible');
         resetComprobacion();
       });
@@ -2720,6 +3236,661 @@
       }
 
       function escHtml(s) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(s || ''));
+        return div.innerHTML;
+      }
+
+    })();
+
+    // ================================================================
+    // AUDITORÍA MODULE
+    // ================================================================
+    (function initAuditoria() {
+      var sb = window._supabase;
+      var viewDashboard    = document.getElementById('view-dashboard');
+      var viewAuditoria    = document.getElementById('view-auditoria');
+      var viewAccountEl    = document.getElementById('view-account');
+      var appMainContent   = document.getElementById('main-content');
+      var viewComprobacion = document.getElementById('view-comprobacion');
+
+      var btnStart         = document.getElementById('btn-start-auditoria');
+      var btnBackDash      = document.getElementById('btn-back-dashboard-audit');
+      var btnNew           = document.getElementById('audit-btn-new');
+
+      // Sub-views
+      var subList   = document.getElementById('auditoria-list');
+      var subUpload = document.getElementById('auditoria-upload');
+      var subDetail = document.getElementById('auditoria-detail');
+
+      // Upload elements
+      var csvDropzone   = document.getElementById('audit-csv-dropzone');
+      var csvInput      = document.getElementById('audit-csv-input');
+      var csvPreviewWrap = document.getElementById('audit-csv-preview-wrap');
+      var csvPreview    = document.getElementById('audit-csv-preview');
+      var csvSummary    = document.getElementById('audit-csv-summary');
+      var btnProcess    = document.getElementById('audit-btn-process');
+      var btnCancelCsv  = document.getElementById('audit-btn-cancel-csv');
+
+      // Detail elements
+      var detailName      = document.getElementById('audit-detail-name');
+      var detailStatus    = document.getElementById('audit-detail-status');
+      var checksContainer = document.getElementById('audit-checks-container');
+      var sessionsContainer = document.getElementById('audit-sessions-container');
+      var emptyMsg        = document.getElementById('audit-empty-msg');
+
+      var parsedRows = [];
+      var currentSessionId = null;
+
+      // ── Navigation ──
+      btnStart.addEventListener('click', function() {
+        viewDashboard.classList.remove('visible');
+        viewAccountEl.classList.remove('visible');
+        appMainContent.classList.remove('visible');
+        if (viewComprobacion) viewComprobacion.classList.remove('visible');
+        viewAuditoria.classList.add('visible');
+        showSubView('list');
+        loadSessions();
+      });
+
+      btnBackDash.addEventListener('click', function() {
+        viewAuditoria.classList.remove('visible');
+        viewDashboard.classList.add('visible');
+      });
+
+      // How it works modal
+      (function() {
+        var btn = document.getElementById('btn-how-auditoria');
+        var modal = document.getElementById('modal-how-auditoria');
+        var close = document.getElementById('modal-how-auditoria-close');
+        btn.addEventListener('click', function() { modal.classList.add('active'); });
+        close.addEventListener('click', function() { modal.classList.remove('active'); });
+        modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); });
+      })();
+
+      function showSubView(name) {
+        subList.style.display   = name === 'list'   ? '' : 'none';
+        subUpload.style.display = name === 'upload' ? '' : 'none';
+        subDetail.style.display = name === 'detail' ? '' : 'none';
+      }
+
+      // ── CSV parsing ──
+      function parseCSV(text) {
+        var lines = text.split('\n').filter(function(l) { return l.trim(); });
+        if (lines.length < 2) return [];
+        var headers = lines[0].split(';').map(function(h) { return h.trim(); });
+        var rows = [];
+        for (var i = 1; i < lines.length; i++) {
+          var vals = lines[i].split(';');
+          var row = {};
+          for (var j = 0; j < headers.length; j++) {
+            row[headers[j]] = (vals[j] || '').trim();
+          }
+          rows.push(row);
+        }
+        return rows;
+      }
+
+      function selectRandomChecks(rows) {
+        // Filter out cancelled visits
+        var valid = rows.filter(function(r) {
+          var tipo = (r['Tipo Seguimiento'] || '').toLowerCase();
+          return tipo.indexOf('cancelada') === -1;
+        });
+
+        // Shuffle all valid visits and pick 2 total
+        var shuffled = valid.slice().sort(function() { return Math.random() - 0.5; });
+        var pick = shuffled.slice(0, 2);
+
+        return pick.map(function(r) {
+          return {
+            comercial: r['Comercial'] || 'Sin asignar',
+            ref_propiedad: r['Ref'] || '',
+            num_demanda: r['Num Demanda'] || '',
+            fecha_visita: r['Fecha Alta'] || '',
+            id_seguimiento: r['ID Seguimiento'] || '',
+            asunto: r['Asunto'] || ''
+          };
+        });
+      }
+
+      // ── CSV dropzone ──
+      csvDropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        csvDropzone.classList.add('over');
+      });
+      ['dragleave', 'dragend'].forEach(function(ev) {
+        csvDropzone.addEventListener(ev, function() { csvDropzone.classList.remove('over'); });
+      });
+      csvDropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        csvDropzone.classList.remove('over');
+        var f = e.dataTransfer.files[0];
+        if (f && f.name.toLowerCase().endsWith('.csv')) handleCSVFile(f);
+      });
+      csvDropzone.addEventListener('click', function() { csvInput.click(); });
+      csvInput.addEventListener('change', function() {
+        if (csvInput.files[0]) handleCSVFile(csvInput.files[0]);
+      });
+
+      function handleCSVFile(file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          parsedRows = parseCSV(e.target.result);
+          if (parsedRows.length === 0) {
+            alert('El CSV esta vacio o no se pudo leer.');
+            return;
+          }
+          renderCSVPreview(parsedRows);
+          csvDropzone.style.display = 'none';
+          csvPreviewWrap.style.display = '';
+        };
+        reader.readAsText(file, 'UTF-8');
+      }
+
+      function renderCSVPreview(rows) {
+        var validRows = rows.filter(function(r) {
+          var tipo = (r['Tipo Seguimiento'] || '').toLowerCase();
+          return tipo.indexOf('cancelada') === -1;
+        });
+        var cancelledCount = rows.length - validRows.length;
+
+        // Group by Comercial for summary
+        var groups = {};
+        validRows.forEach(function(r) {
+          var com = r['Comercial'] || 'Sin asignar';
+          if (!groups[com]) groups[com] = 0;
+          groups[com]++;
+        });
+
+        var html = '<table><thead><tr>' +
+          '<th>ID</th><th>Ref</th><th>Comercial</th><th>Fecha</th><th>Tipo</th><th>Asunto</th>' +
+          '</tr></thead><tbody>';
+        rows.slice(0, 50).forEach(function(r) {
+          var isCancelled = (r['Tipo Seguimiento'] || '').toLowerCase().indexOf('cancelada') !== -1;
+          html += '<tr style="' + (isCancelled ? 'opacity:0.4;text-decoration:line-through;' : '') + '">' +
+            '<td>' + esc(r['ID Seguimiento']) + '</td>' +
+            '<td>' + esc(r['Ref']) + '</td>' +
+            '<td>' + esc(r['Comercial']) + '</td>' +
+            '<td>' + esc(r['Fecha Alta']) + '</td>' +
+            '<td>' + esc(r['Tipo Seguimiento']) + '</td>' +
+            '<td>' + esc((r['Asunto'] || '').substring(0, 60)) + '</td>' +
+            '</tr>';
+        });
+        html += '</tbody></table>';
+        if (rows.length > 50) html += '<div style="padding:8px;text-align:center;color:var(--gray-500);font-size:12px;">Mostrando 50 de ' + rows.length + ' filas</div>';
+        csvPreview.innerHTML = html;
+
+        var comerciales = Object.keys(groups);
+        csvSummary.innerHTML = '<strong>' + rows.length + ' visitas</strong> encontradas (' +
+          cancelledCount + ' canceladas). <strong>' + comerciales.length + ' comerciales</strong>: ' +
+          comerciales.join(', ') + '. Se seleccionaran <strong>2 visitas aleatorias</strong> para auditar.';
+      }
+
+      btnNew.addEventListener('click', function() {
+        parsedRows = [];
+        csvInput.value = '';
+        csvDropzone.style.display = '';
+        csvPreviewWrap.style.display = 'none';
+        showSubView('upload');
+      });
+
+      btnCancelCsv.addEventListener('click', function() {
+        parsedRows = [];
+        csvInput.value = '';
+        csvDropzone.style.display = '';
+        csvPreviewWrap.style.display = 'none';
+        showSubView('list');
+      });
+
+      // ── Process CSV and create session ──
+      btnProcess.addEventListener('click', function() {
+        if (parsedRows.length === 0) return;
+        btnProcess.disabled = true;
+        btnProcess.textContent = 'Procesando...';
+
+        var checks = selectRandomChecks(parsedRows);
+        var now = new Date();
+        var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        var defaultName = 'Auditoria ' + monthNames[now.getMonth()] + ' ' + now.getFullYear();
+
+        sb.auth.getUser().then(function(res) {
+          var userId = res.data && res.data.user ? res.data.user.id : null;
+
+          return sb.from('audit_sessions').insert({
+            name: defaultName,
+            created_by: userId,
+            status: 'pending',
+            raw_csv_data: parsedRows,
+            total_checks: checks.length,
+            completed_checks: 0
+          }).select().single();
+        }).then(function(res) {
+          if (res.error) throw res.error;
+          var session = res.data;
+          var checkRows = checks.map(function(c) {
+            return {
+              session_id: session.id,
+              comercial: c.comercial,
+              ref_propiedad: c.ref_propiedad,
+              num_demanda: c.num_demanda,
+              fecha_visita: c.fecha_visita,
+              id_seguimiento: c.id_seguimiento,
+              asunto: c.asunto,
+              status: 'pending'
+            };
+          });
+          return sb.from('audit_checks').insert(checkRows).then(function(insRes) {
+            if (insRes.error) throw insRes.error;
+            btnProcess.disabled = false;
+            btnProcess.textContent = 'Procesar y seleccionar visitas';
+            parsedRows = [];
+            csvInput.value = '';
+            csvDropzone.style.display = '';
+            csvPreviewWrap.style.display = 'none';
+            loadSessionDetail(session.id);
+          });
+        }).catch(function(err) {
+          console.error('Error creating audit session:', err);
+          alert('Error al crear la auditoria: ' + (err.message || err));
+          btnProcess.disabled = false;
+          btnProcess.textContent = 'Procesar y seleccionar visitas';
+        });
+      });
+
+      // ── Load sessions list ──
+      function loadSessions() {
+        sessionsContainer.innerHTML = '<div class="audit-empty">Cargando...</div>';
+        sb.from('audit_sessions')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .then(function(res) {
+            if (res.error) {
+              console.error(res.error);
+              sessionsContainer.innerHTML = '<div class="audit-empty">Error al cargar las auditorias.</div>';
+              return;
+            }
+            var sessions = res.data || [];
+            if (sessions.length === 0) {
+              sessionsContainer.innerHTML = '<div class="audit-empty">No hay auditorias todavia. Crea una nueva para empezar.</div>';
+              return;
+            }
+            var html = '';
+            sessions.forEach(function(s) {
+              var statusClass = s.status || 'pending';
+              var statusLabel = statusClass === 'complete' ? 'Completo' :
+                                statusClass === 'partial' ? 'Parcial (' + s.completed_checks + '/' + s.total_checks + ')' :
+                                'Pendiente';
+              var dateStr = new Date(s.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+              html += '<div class="audit-session-row" data-session-id="' + s.id + '">' +
+                '<div class="audit-session-info">' +
+                  '<div class="audit-session-name">' + esc(s.name) + '</div>' +
+                  '<div class="audit-session-date">' + dateStr + '</div>' +
+                '</div>' +
+                '<div style="display:flex;align-items:center;gap:10px;">' +
+                  '<span class="audit-status-badge ' + statusClass + '">' + statusLabel + '</span>' +
+                  '<button class="audit-delete-session-btn" data-session-id="' + s.id + '" title="Eliminar auditoria" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:4px;border-radius:6px;transition:color 0.15s;">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+                  '</button>' +
+                '</div>' +
+              '</div>';
+            });
+            sessionsContainer.innerHTML = html;
+
+            // Attach click handlers
+            sessionsContainer.querySelectorAll('.audit-session-row').forEach(function(row) {
+              row.addEventListener('click', function(e) {
+                if (e.target.closest('.audit-delete-session-btn')) return;
+                loadSessionDetail(row.getAttribute('data-session-id'));
+              });
+            });
+
+            // Delete session buttons
+            sessionsContainer.querySelectorAll('.audit-delete-session-btn').forEach(function(btn) {
+              btn.addEventListener('mouseenter', function() { btn.style.color = '#991b1b'; });
+              btn.addEventListener('mouseleave', function() { btn.style.color = 'var(--gray-400)'; });
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var sid = btn.getAttribute('data-session-id');
+                if (confirm('Eliminar esta auditoria y todos sus datos?')) {
+                  deleteSession(sid);
+                }
+              });
+            });
+          });
+      }
+
+      // ── Delete session ──
+      function deleteSession(sessionId) {
+        // Delete checks first (cascade should handle it, but be safe)
+        sb.from('audit_sessions').delete().eq('id', sessionId)
+          .then(function(res) {
+            if (res.error) throw res.error;
+            // Also clean up storage files for this session
+            sb.storage.from('hojas-visita').list(sessionId).then(function(listRes) {
+              if (listRes.data && listRes.data.length > 0) {
+                var paths = listRes.data.map(function(f) { return sessionId + '/' + f.name; });
+                sb.storage.from('hojas-visita').remove(paths);
+              }
+            });
+            loadSessions();
+          })
+          .catch(function(err) {
+            console.error('Delete session error:', err);
+            alert('Error al eliminar: ' + (err.message || err));
+          });
+      }
+
+      // ── Load session detail ──
+      function loadSessionDetail(sessionId) {
+        currentSessionId = sessionId;
+        showSubView('detail');
+        checksContainer.innerHTML = '<div class="audit-empty">Cargando...</div>';
+
+        Promise.all([
+          sb.from('audit_sessions').select('*').eq('id', sessionId).single(),
+          sb.from('audit_checks').select('*').eq('session_id', sessionId).order('comercial')
+        ]).then(function(results) {
+          var sessionRes = results[0];
+          var checksRes = results[1];
+
+          if (sessionRes.error) throw sessionRes.error;
+          if (checksRes.error) throw checksRes.error;
+
+          var session = sessionRes.data;
+          var checks = checksRes.data || [];
+
+          // Render header
+          detailName.textContent = session.name;
+          detailName.style.cursor = 'pointer';
+          detailName.title = 'Haz click para editar el nombre';
+          detailName.onclick = function() { editSessionName(session); };
+
+          var statusClass = session.status || 'pending';
+          var statusLabel = statusClass === 'complete' ? 'Completo' :
+                            statusClass === 'partial' ? 'Parcial (' + session.completed_checks + '/' + session.total_checks + ')' :
+                            'Pendiente';
+          detailStatus.className = 'audit-status-badge ' + statusClass;
+          detailStatus.textContent = statusLabel;
+
+          // Group checks by comercial
+          var groups = {};
+          checks.forEach(function(c) {
+            if (!groups[c.comercial]) groups[c.comercial] = [];
+            groups[c.comercial].push(c);
+          });
+
+          var html = '';
+          Object.keys(groups).sort().forEach(function(com) {
+            html += '<div class="audit-comercial-group">';
+            html += '<h3>' + esc(com) + '</h3>';
+            groups[com].forEach(function(check) {
+              html += renderCheckCard(check);
+            });
+            html += '</div>';
+          });
+
+          checksContainer.innerHTML = html;
+          attachCheckHandlers();
+        }).catch(function(err) {
+          console.error(err);
+          checksContainer.innerHTML = '<div class="audit-empty">Error al cargar el detalle.</div>';
+        });
+      }
+
+      function renderCheckCard(check) {
+        var statusIcon = '';
+        var statusText = '';
+        var actionsHtml = '';
+
+        // Download & delete buttons (shown whenever a file has been uploaded)
+        var fileButtons = '';
+        if (check.hoja_url) {
+          fileButtons = '<div class="audit-check-actions" style="margin-top:8px;">' +
+            '<button class="audit-btn-secondary audit-download-btn" data-check-id="' + check.id + '" data-url="' + esc(check.hoja_url) + '" data-filename="' + esc(check.hoja_filename || 'hoja') + '">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+              'Descargar' +
+            '</button>' +
+            '<button class="audit-btn-danger audit-delete-file-btn" data-check-id="' + check.id + '">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+              'Eliminar archivo' +
+            '</button>' +
+          '</div>';
+        }
+
+        if (check.status === 'verified') {
+          statusIcon = '<span class="audit-check-status verified">&#10003; Verificada</span>';
+          if (check.hoja_filename) statusIcon += '<div class="audit-file-info">Archivo: ' + esc(check.hoja_filename) + '</div>';
+          actionsHtml = fileButtons;
+        } else if (check.status === 'not_found') {
+          statusIcon = '<span class="audit-check-status not_found">&#10007; No encontrada</span>';
+          if (check.notes) statusIcon += '<div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Nota: ' + esc(check.notes) + '</div>';
+        } else if (check.status === 'uploaded') {
+          statusIcon = '<span class="audit-check-status uploaded">&#8593; Subida: ' + esc(check.hoja_filename || 'archivo') + '</span>';
+          actionsHtml = '<div class="audit-check-actions" style="margin-top:8px;">' +
+            '<button class="btn-primary audit-verify-btn" data-check-id="' + check.id + '">Marcar verificada</button>' +
+            '<button class="audit-btn-danger audit-notfound-btn" data-check-id="' + check.id + '">No encontrada</button>' +
+          '</div>' + fileButtons;
+        } else {
+          statusIcon = '<span class="audit-check-status pending">&#9679; Pendiente</span>';
+          actionsHtml = '<div style="margin-top:8px;">' +
+            '<div class="audit-mini-dropzone" data-check-id="' + check.id + '">' +
+              'Arrastra la hoja de visita aqui o <span style="color:var(--blue);cursor:pointer;">selecciona un archivo</span>' +
+              '<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;">' +
+            '</div>' +
+            '<div class="audit-check-actions" style="margin-top:8px;">' +
+              '<button class="audit-btn-danger audit-notfound-btn" data-check-id="' + check.id + '">Marcar no encontrada</button>' +
+            '</div>' +
+          '</div>';
+        }
+
+        return '<div class="audit-check-card" data-check-id="' + check.id + '">' +
+          '<div class="audit-check-info">' +
+            '<div class="audit-check-field"><strong>Ref</strong><span>' + esc(check.ref_propiedad) + '</span></div>' +
+            '<div class="audit-check-field"><strong>Num Demanda</strong><span>' + esc(check.num_demanda) + '</span></div>' +
+            '<div class="audit-check-field"><strong>Fecha</strong><span>' + esc(check.fecha_visita) + '</span></div>' +
+            '<div class="audit-check-field"><strong>ID Seguimiento</strong><span>' + esc(check.id_seguimiento) + '</span></div>' +
+          '</div>' +
+          '<div style="font-size:12px;color:var(--gray-600);margin-bottom:8px;">' + esc(check.asunto) + '</div>' +
+          statusIcon +
+          actionsHtml +
+        '</div>';
+      }
+
+      function attachCheckHandlers() {
+        // Mini dropzones for file upload
+        checksContainer.querySelectorAll('.audit-mini-dropzone').forEach(function(dz) {
+          var checkId = dz.getAttribute('data-check-id');
+          var input = dz.querySelector('input[type="file"]');
+
+          dz.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dz.classList.add('over');
+          });
+          ['dragleave', 'dragend'].forEach(function(ev) {
+            dz.addEventListener(ev, function() { dz.classList.remove('over'); });
+          });
+          dz.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dz.classList.remove('over');
+            if (e.dataTransfer.files[0]) uploadHoja(checkId, e.dataTransfer.files[0]);
+          });
+          dz.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'INPUT') input.click();
+          });
+          input.addEventListener('change', function() {
+            if (input.files[0]) uploadHoja(checkId, input.files[0]);
+          });
+        });
+
+        // Verify buttons
+        checksContainer.querySelectorAll('.audit-verify-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            markStatus(btn.getAttribute('data-check-id'), 'verified', null);
+          });
+        });
+
+        // Not found buttons
+        checksContainer.querySelectorAll('.audit-notfound-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var note = prompt('Nota opcional (por que no se encontro):');
+            if (note === null) return; // user cancelled
+            markStatus(btn.getAttribute('data-check-id'), 'not_found', note || null);
+          });
+        });
+
+        // Download buttons
+        checksContainer.querySelectorAll('.audit-download-btn').forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var checkId = btn.getAttribute('data-check-id');
+            var filename = btn.getAttribute('data-filename');
+            downloadHoja(checkId, filename);
+          });
+        });
+
+        // Delete file buttons
+        checksContainer.querySelectorAll('.audit-delete-file-btn').forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var checkId = btn.getAttribute('data-check-id');
+            if (confirm('Eliminar el archivo subido? La visita volvera a estado pendiente.')) {
+              deleteHoja(checkId);
+            }
+          });
+        });
+      }
+
+      // ── Upload hoja de visita ──
+      function uploadHoja(checkId, file) {
+        var ext = file.name.split('.').pop();
+        var path = currentSessionId + '/' + checkId + '.' + ext;
+
+        // Show uploading state
+        var card = checksContainer.querySelector('[data-check-id="' + checkId + '"].audit-check-card');
+        if (card) {
+          var dz = card.querySelector('.audit-mini-dropzone');
+          if (dz) dz.innerHTML = '<span style="color:var(--blue);">Subiendo...</span>';
+        }
+
+        sb.storage.from('hojas-visita').upload(path, file, { upsert: true })
+          .then(function(res) {
+            if (res.error) throw res.error;
+            var url = sb.storage.from('hojas-visita').getPublicUrl(path).data.publicUrl;
+            return sb.from('audit_checks').update({
+              status: 'uploaded',
+              hoja_url: url,
+              hoja_filename: file.name
+            }).eq('id', checkId);
+          })
+          .then(function(res) {
+            if (res.error) throw res.error;
+            loadSessionDetail(currentSessionId);
+          })
+          .catch(function(err) {
+            console.error('Upload error:', err);
+            alert('Error al subir el archivo: ' + (err.message || err));
+            loadSessionDetail(currentSessionId);
+          });
+      }
+
+      // ── Download hoja de visita ──
+      function downloadHoja(checkId, filename) {
+        // Get check to find the storage path
+        sb.from('audit_checks').select('hoja_url, hoja_filename, session_id').eq('id', checkId).single()
+          .then(function(res) {
+            if (res.error) throw res.error;
+            var check = res.data;
+            // Find the file in storage by listing session folder
+            var ext = (check.hoja_filename || '').split('.').pop() || 'pdf';
+            var path = check.session_id + '/' + checkId + '.' + ext;
+
+            return sb.storage.from('hojas-visita').download(path);
+          })
+          .then(function(res) {
+            if (res.error) throw res.error;
+            // Create download link
+            var url = URL.createObjectURL(res.data);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = filename || 'hoja-visita';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          })
+          .catch(function(err) {
+            console.error('Download error:', err);
+            alert('Error al descargar: ' + (err.message || err));
+          });
+      }
+
+      // ── Delete hoja de visita ──
+      function deleteHoja(checkId) {
+        sb.from('audit_checks').select('hoja_filename, session_id').eq('id', checkId).single()
+          .then(function(res) {
+            if (res.error) throw res.error;
+            var check = res.data;
+            var ext = (check.hoja_filename || '').split('.').pop() || 'pdf';
+            var path = check.session_id + '/' + checkId + '.' + ext;
+
+            // Delete file from storage
+            return sb.storage.from('hojas-visita').remove([path]).then(function(delRes) {
+              if (delRes.error) throw delRes.error;
+              // Reset check to pending
+              return sb.from('audit_checks').update({
+                status: 'pending',
+                hoja_url: null,
+                hoja_filename: null,
+                verified_at: null,
+                notes: null
+              }).eq('id', checkId);
+            });
+          })
+          .then(function(res) {
+            if (res.error) throw res.error;
+            loadSessionDetail(currentSessionId);
+          })
+          .catch(function(err) {
+            console.error('Delete error:', err);
+            alert('Error al eliminar: ' + (err.message || err));
+          });
+      }
+
+      // ── Mark check status ──
+      function markStatus(checkId, status, notes) {
+        var update = { status: status };
+        if (notes !== null && notes !== undefined) update.notes = notes;
+        if (status === 'verified') update.verified_at = new Date().toISOString();
+
+        sb.from('audit_checks').update(update).eq('id', checkId)
+          .then(function(res) {
+            if (res.error) throw res.error;
+            loadSessionDetail(currentSessionId);
+          })
+          .catch(function(err) {
+            console.error('Status update error:', err);
+            alert('Error al actualizar: ' + (err.message || err));
+          });
+      }
+
+      // ── Edit session name ──
+      function editSessionName(session) {
+        var newName = prompt('Nombre de la auditoria:', session.name);
+        if (newName === null || newName.trim() === '' || newName === session.name) return;
+        sb.from('audit_sessions').update({ name: newName.trim() }).eq('id', session.id)
+          .then(function(res) {
+            if (res.error) throw res.error;
+            detailName.textContent = newName.trim();
+          })
+          .catch(function(err) {
+            console.error(err);
+            alert('Error al actualizar el nombre.');
+          });
+      }
+
+      // ── Utility ──
+      function esc(s) {
         var div = document.createElement('div');
         div.appendChild(document.createTextNode(s || ''));
         return div.innerHTML;
