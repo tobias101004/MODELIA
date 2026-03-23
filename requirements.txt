@@ -3,3 +3,4 @@ gunicorn
 pdfplumber
 openai
 python-dotenv
+PyMuPDF
