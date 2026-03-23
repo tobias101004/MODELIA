@@ -3281,6 +3281,7 @@
 
       var parsedRows = [];
       var currentSessionId = null;
+      var currentChecksMap = {}; // checkId -> check data, for verification
 
       // ── Navigation ──
       btnStart.addEventListener('click', function() {
@@ -3338,20 +3339,33 @@
           return tipo.indexOf('cancelada') === -1;
         });
 
-        // Shuffle all valid visits and pick 2 total
-        var shuffled = valid.slice().sort(function() { return Math.random() - 0.5; });
-        var pick = shuffled.slice(0, 2);
-
-        return pick.map(function(r) {
-          return {
-            comercial: r['Comercial'] || 'Sin asignar',
-            ref_propiedad: r['Ref'] || '',
-            num_demanda: r['Num Demanda'] || '',
-            fecha_visita: r['Fecha Alta'] || '',
-            id_seguimiento: r['ID Seguimiento'] || '',
-            asunto: r['Asunto'] || ''
-          };
+        // Group by Comercial (agent)
+        var groups = {};
+        valid.forEach(function(r) {
+          var com = r['Comercial'] || 'Sin asignar';
+          if (!groups[com]) groups[com] = [];
+          groups[com].push(r);
         });
+
+        // Pick up to 2 random visits per agent
+        var picks = [];
+        Object.keys(groups).forEach(function(com) {
+          var agentVisits = groups[com];
+          var shuffled = agentVisits.slice().sort(function() { return Math.random() - 0.5; });
+          var selected = shuffled.slice(0, 2);
+          selected.forEach(function(r) {
+            picks.push({
+              comercial: r['Comercial'] || 'Sin asignar',
+              ref_propiedad: r['Ref'] || '',
+              num_demanda: r['Num Demanda'] || '',
+              fecha_visita: r['Fecha Alta'] || '',
+              id_seguimiento: r['ID Seguimiento'] || '',
+              asunto: r['Asunto'] || ''
+            });
+          });
+        });
+
+        return picks;
       }
 
       // ── CSV dropzone ──
@@ -3422,9 +3436,12 @@
         csvPreview.innerHTML = html;
 
         var comerciales = Object.keys(groups);
+        var totalToAudit = comerciales.reduce(function(sum, com) {
+          return sum + Math.min(groups[com], 2);
+        }, 0);
         csvSummary.innerHTML = '<strong>' + rows.length + ' visitas</strong> encontradas (' +
           cancelledCount + ' canceladas). <strong>' + comerciales.length + ' comerciales</strong>: ' +
-          comerciales.join(', ') + '. Se seleccionaran <strong>2 visitas aleatorias</strong> para auditar.';
+          comerciales.join(', ') + '. Se seleccionaran <strong>2 visitas aleatorias por comercial</strong> (' + totalToAudit + ' en total) para auditar.';
       }
 
       btnNew.addEventListener('click', function() {
@@ -3600,6 +3617,10 @@
           var session = sessionRes.data;
           var checks = checksRes.data || [];
 
+          // Store checks for verification lookup
+          currentChecksMap = {};
+          checks.forEach(function(c) { currentChecksMap[c.id] = c; });
+
           // Render header
           detailName.textContent = session.name;
           detailName.style.cursor = 'pointer';
@@ -3661,6 +3682,20 @@
         if (check.status === 'verified') {
           statusIcon = '<span class="audit-check-status verified">&#10003; Verificada</span>';
           if (check.hoja_filename) statusIcon += '<div class="audit-file-info">Archivo: ' + esc(check.hoja_filename) + '</div>';
+          // Show auto-verification details if available
+          var verData = null;
+          try { verData = JSON.parse(check.notes); } catch(e) {}
+          if (verData && verData.auto_verified && verData.fields) {
+            statusIcon += '<div style="margin-top:6px;font-size:11px;padding:6px 8px;background:var(--green-50,#f0fdf4);border-radius:6px;border:1px solid var(--green-200,#bbf7d0);">';
+            statusIcon += '<div style="font-weight:600;color:var(--green-700,#15803d);margin-bottom:4px;">Verificacion automatica</div>';
+            Object.keys(verData.fields).forEach(function(key) {
+              var f = verData.fields[key];
+              var icon = f.match ? '&#10003;' : '&#10007;';
+              var color = f.match ? 'var(--green-600,#16a34a)' : 'var(--red-600,#dc2626)';
+              statusIcon += '<div style="color:' + color + ';">' + icon + ' <strong>' + esc(key) + '</strong>: ' + esc(f.found || '(vacio)') + '</div>';
+            });
+            statusIcon += '</div>';
+          }
           actionsHtml = fileButtons;
         } else if (check.status === 'not_found') {
           statusIcon = '<span class="audit-check-status not_found">&#10007; No encontrada</span>';
@@ -3763,8 +3798,9 @@
 
       // ── Upload hoja de visita ──
       function uploadHoja(checkId, file) {
-        var ext = file.name.split('.').pop();
+        var ext = file.name.split('.').pop().toLowerCase();
         var path = currentSessionId + '/' + checkId + '.' + ext;
+        var isPdf = ext === 'pdf';
 
         // Show uploading state
         var card = checksContainer.querySelector('[data-check-id="' + checkId + '"].audit-check-card');
@@ -3785,11 +3821,86 @@
           })
           .then(function(res) {
             if (res.error) throw res.error;
-            loadSessionDetail(currentSessionId);
+
+            // If PDF, auto-verify content against expected visit data
+            if (isPdf) {
+              verifyHoja(checkId, file);
+            } else {
+              loadSessionDetail(currentSessionId);
+            }
           })
           .catch(function(err) {
             console.error('Upload error:', err);
             alert('Error al subir el archivo: ' + (err.message || err));
+            loadSessionDetail(currentSessionId);
+          });
+      }
+
+      // ── Verify hoja de visita PDF ──
+      function verifyHoja(checkId, file) {
+        var check = currentChecksMap[checkId];
+        if (!check) {
+          loadSessionDetail(currentSessionId);
+          return;
+        }
+
+        // Show verifying state
+        var card = checksContainer.querySelector('[data-check-id="' + checkId + '"].audit-check-card');
+        if (card) {
+          var dz = card.querySelector('.audit-mini-dropzone');
+          var statusEl = card.querySelector('.audit-check-status');
+          if (dz) dz.innerHTML = '<span style="color:var(--blue);">&#8987; Verificando contenido del PDF...</span>';
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--blue);">&#8987; Verificando contenido del PDF...</span>';
+        }
+
+        var formData = new FormData();
+        formData.append('pdf', file);
+        formData.append('comercial', check.comercial || '');
+        formData.append('ref_propiedad', check.ref_propiedad || '');
+        formData.append('num_demanda', check.num_demanda || '');
+        formData.append('fecha_visita', check.fecha_visita || '');
+        formData.append('id_seguimiento', check.id_seguimiento || '');
+
+        fetch('/verify-hoja', { method: 'POST', body: formData })
+          .then(function(resp) { return resp.json(); })
+          .then(function(data) {
+            if (data.match) {
+              // Auto-verify: content matches
+              var verificationNote = JSON.stringify({
+                auto_verified: true,
+                fields: data.fields,
+                extracted: data.extracted
+              });
+              return sb.from('audit_checks').update({
+                status: 'verified',
+                verified_at: new Date().toISOString(),
+                notes: verificationNote
+              }).eq('id', checkId).then(function(upRes) {
+                if (upRes.error) throw upRes.error;
+                updateSessionStatus(currentSessionId);
+                loadSessionDetail(currentSessionId);
+              });
+            } else {
+              // Mismatch: show details and keep as 'uploaded'
+              var msg = 'La hoja de visita NO coincide con la visita esperada:\n\n';
+              if (data.fields) {
+                Object.keys(data.fields).forEach(function(key) {
+                  var f = data.fields[key];
+                  var icon = f.match ? '✓' : '✗';
+                  msg += icon + ' ' + key + ': esperado "' + f.expected + '", encontrado "' + f.found + '"\n';
+                });
+              }
+              if (data.error) {
+                msg += '\nError: ' + data.error;
+              }
+              msg += '\nPuedes verificar manualmente o subir otro archivo.';
+              alert(msg);
+              loadSessionDetail(currentSessionId);
+            }
+          })
+          .catch(function(err) {
+            console.error('Verification error:', err);
+            // Verification failed but upload succeeded — just reload
             loadSessionDetail(currentSessionId);
           });
       }
@@ -3857,6 +3968,26 @@
           });
       }
 
+      // ── Update session status based on checks ──
+      function updateSessionStatus(sessionId) {
+        sb.from('audit_checks').select('status').eq('session_id', sessionId)
+          .then(function(res) {
+            if (res.error) return;
+            var checks = res.data || [];
+            var total = checks.length;
+            var completed = checks.filter(function(c) {
+              return c.status === 'verified' || c.status === 'not_found';
+            }).length;
+            var status = completed === 0 ? 'pending' : (completed >= total ? 'complete' : 'partial');
+
+            return sb.from('audit_sessions').update({
+              status: status,
+              total_checks: total,
+              completed_checks: completed
+            }).eq('id', sessionId);
+          });
+      }
+
       // ── Mark check status ──
       function markStatus(checkId, status, notes) {
         var update = { status: status };
@@ -3866,6 +3997,7 @@
         sb.from('audit_checks').update(update).eq('id', checkId)
           .then(function(res) {
             if (res.error) throw res.error;
+            updateSessionStatus(currentSessionId);
             loadSessionDetail(currentSessionId);
           })
           .catch(function(err) {

@@ -37,6 +37,7 @@ from comprobacion_extractor import (                  # noqa: E402
     extraer_datos_escritura, extraer_datos_211, extraer_datos_600,
 )
 from comprobacion_comparator import comparar_documentos  # noqa: E402
+from hoja_extractor import extraer_datos_hoja, verificar_hoja  # noqa: E402
 
 # ── App Flask ─────────────────────────────────────────────────────────────────
 
@@ -198,6 +199,53 @@ def comprobacion():
                 Path(p).unlink(missing_ok=True)
             except Exception:
                 pass
+
+
+@app.route("/verify-hoja", methods=["POST"])
+def verify_hoja():
+    """Receive a hoja de visita PDF + expected visit data, verify they match."""
+    if "pdf" not in request.files:
+        return jsonify({"error": "No se recibio ningun archivo PDF."}), 400
+
+    pdf_file = request.files["pdf"]
+
+    # Expected visit data from form fields
+    expected = {
+        "comercial": request.form.get("comercial", ""),
+        "ref_propiedad": request.form.get("ref_propiedad", ""),
+        "num_demanda": request.form.get("num_demanda", ""),
+        "fecha_visita": request.form.get("fecha_visita", ""),
+        "id_seguimiento": request.form.get("id_seguimiento", ""),
+    }
+
+    # API key
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        try:
+            import base64
+            cfg_path = MODELIA_DIR / "config" / "key.txt"
+            api_key = base64.b64decode(cfg_path.read_text().strip()).decode()
+        except Exception:
+            return jsonify({"error": "API Key no configurada en el servidor."}), 500
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    try:
+        pdf_file.save(tmp.name)
+        tmp.close()
+
+        extracted = extraer_datos_hoja(Path(tmp.name), api_key)
+        result = verificar_hoja(extracted, expected)
+
+        return jsonify({"ok": True, **result})
+
+    except Exception as exc:
+        return jsonify({"error": str(exc), "match": False}), 500
+
+    finally:
+        try:
+            Path(tmp.name).unlink(missing_ok=True)
+        except Exception:
+            pass
 
 
 @app.route("/download")
