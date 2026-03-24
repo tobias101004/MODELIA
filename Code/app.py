@@ -37,7 +37,10 @@ from comprobacion_extractor import (                  # noqa: E402
     extraer_datos_escritura, extraer_datos_211, extraer_datos_600,
 )
 from comprobacion_comparator import comparar_documentos  # noqa: E402
-from hoja_extractor import extraer_datos_hoja, verificar_hoja  # noqa: E402
+from hoja_extractor import (                                   # noqa: E402
+    extraer_datos_hoja, verificar_hoja,
+    extraer_datos_hoja_por_pagina, emparejar_hojas,
+)
 
 # ── App Flask ─────────────────────────────────────────────────────────────────
 
@@ -216,6 +219,10 @@ def verify_hoja():
         "num_demanda": request.form.get("num_demanda", ""),
         "fecha_visita": request.form.get("fecha_visita", ""),
         "id_seguimiento": request.form.get("id_seguimiento", ""),
+        "nombre_cliente": request.form.get("nombre_cliente", ""),
+        "tipo_propiedad": request.form.get("tipo_propiedad", ""),
+        "direccion_propiedad": request.form.get("direccion_propiedad", ""),
+        "precio_propiedad": request.form.get("precio_propiedad", ""),
     }
 
     # API key
@@ -240,6 +247,61 @@ def verify_hoja():
 
     except Exception as exc:
         return jsonify({"error": str(exc), "match": False}), 500
+
+    finally:
+        try:
+            Path(tmp.name).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+@app.route("/verify-hojas-batch", methods=["POST"])
+def verify_hojas_batch():
+    """Receive a single PDF with multiple hojas + expected checks, verify matches.
+
+    Expects:
+        - pdf: The multi-page PDF file
+        - checks: JSON string with list of expected check data
+    """
+    if "pdf" not in request.files:
+        return jsonify({"error": "No se recibio ningun archivo PDF."}), 400
+
+    pdf_file = request.files["pdf"]
+    checks_raw = request.form.get("checks", "[]")
+    try:
+        checks = json.loads(checks_raw)
+    except json.JSONDecodeError:
+        return jsonify({"error": "JSON de checks invalido."}), 400
+
+    # API key
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        try:
+            import base64
+            cfg_path = MODELIA_DIR / "config" / "key.txt"
+            api_key = base64.b64decode(cfg_path.read_text().strip()).decode()
+        except Exception:
+            return jsonify({"error": "API Key no configurada en el servidor."}), 500
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    try:
+        pdf_file.save(tmp.name)
+        tmp.close()
+
+        # Extract data from each page independently
+        extractions = extraer_datos_hoja_por_pagina(Path(tmp.name), api_key)
+
+        # Match extractions to expected checks
+        results = emparejar_hojas(extractions, checks)
+
+        return jsonify({
+            "ok": True,
+            "results": results,
+            "total_pages": len(extractions),
+        })
+
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
     finally:
         try:

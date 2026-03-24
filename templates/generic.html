@@ -1467,9 +1467,93 @@
       font-weight: 600;
     }
     .audit-check-status.verified { color: #166534; }
-    .audit-check-status.uploaded { color: var(--blue); }
+    .audit-check-status.incomplete { color: #b45309; }
     .audit-check-status.not_found { color: #991b1b; }
     .audit-check-status.pending { color: var(--gray-500); }
+
+    .audit-result-summary {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: var(--gray-50);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
+    }
+    .audit-result-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .audit-result-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .audit-result-dot.green { background: #16a34a; }
+    .audit-result-dot.orange { background: #d97706; }
+    .audit-result-dot.red { background: #dc2626; }
+    .audit-result-dot.gray { background: #9ca3af; }
+
+    .audit-batch-dropzone {
+      border: 2px dashed var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--gray-500);
+      transition: background var(--transition), border-color var(--transition);
+      margin-bottom: 20px;
+    }
+    .audit-batch-dropzone:hover {
+      background: var(--blue-muted);
+      border-color: var(--blue);
+    }
+    .audit-batch-dropzone.over {
+      background: rgba(20, 61, 142, 0.06);
+      border-color: var(--blue);
+    }
+
+    .audit-hoja-preview {
+      margin-top: 8px;
+    }
+    .audit-hoja-preview iframe {
+      width: 100%;
+      height: 400px;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+    }
+    .audit-view-btn {
+      font-size: 11px;
+      padding: 4px 10px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-md);
+      background: var(--white);
+      color: var(--blue);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .audit-view-btn:hover {
+      background: var(--blue-muted);
+    }
+
+    .audit-session-summary {
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .audit-session-summary-item {
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
     .audit-file-info {
       font-size: 12px;
       color: var(--gray-600);
@@ -2212,6 +2296,8 @@
             <span class="audit-status-badge" id="audit-detail-status"></span>
           </div>
         </div>
+        <div id="audit-result-summary"></div>
+        <div id="audit-batch-upload"></div>
         <div id="audit-checks-container"></div>
       </div>
     </div>
@@ -3275,13 +3361,29 @@
       // Detail elements
       var detailName      = document.getElementById('audit-detail-name');
       var detailStatus    = document.getElementById('audit-detail-status');
+      var resultSummary   = document.getElementById('audit-result-summary');
+      var batchUploadEl   = document.getElementById('audit-batch-upload');
       var checksContainer = document.getElementById('audit-checks-container');
       var sessionsContainer = document.getElementById('audit-sessions-container');
       var emptyMsg        = document.getElementById('audit-empty-msg');
 
       var parsedRows = [];
       var currentSessionId = null;
-      var currentChecksMap = {}; // checkId -> check data, for verification
+      var currentChecksMap = {}; // checkId -> check data
+      var currentSessionHojaUrl = null; // URL of the batch-uploaded PDF
+
+      // ── Field display labels ──
+      var FIELD_LABELS = {
+        asesor: 'Asesor',
+        nombre_cliente: 'Nombre cliente',
+        ref_propiedad: 'Ref. propiedad',
+        solicitud_demanda: 'N\u00ba solicitud/demanda',
+        fecha_visita: 'Fecha visita',
+        tipo_propiedad: 'Tipo propiedad',
+        direccion_propiedad: 'Direcci\u00f3n propiedad',
+        precio_propiedad: 'Precio propiedad',
+        firma_cliente: 'Firma cliente'
+      };
 
       // ── Navigation ──
       btnStart.addEventListener('click', function() {
@@ -3332,6 +3434,14 @@
         return rows;
       }
 
+      // ── Helper: find CSV column by possible names ──
+      function csvCol(row, names) {
+        for (var i = 0; i < names.length; i++) {
+          if (row[names[i]] !== undefined && row[names[i]] !== '') return row[names[i]];
+        }
+        return '';
+      }
+
       function selectRandomChecks(rows) {
         // Filter out cancelled visits
         var valid = rows.filter(function(r) {
@@ -3357,15 +3467,41 @@
             picks.push({
               comercial: r['Comercial'] || 'Sin asignar',
               ref_propiedad: r['Ref'] || '',
-              num_demanda: r['Num Demanda'] || '',
+              num_demanda: csvCol(r, ['Num Demanda', 'N Demanda', 'N solicitud', 'Num. Demanda']),
               fecha_visita: r['Fecha Alta'] || '',
               id_seguimiento: r['ID Seguimiento'] || '',
-              asunto: r['Asunto'] || ''
+              asunto: r['Asunto'] || '',
+              nombre_cliente: csvCol(r, ['Nombre Cliente', 'Cliente', 'Nombre']),
+              tipo_propiedad: csvCol(r, ['Tipo Propiedad', 'Tipo propiedad', 'Tipo']),
+              direccion_propiedad: csvCol(r, ['Direccion', 'Direcci\u00f3n', 'Direccion Propiedad', 'Direcci\u00f3n Propiedad']),
+              precio_propiedad: csvCol(r, ['Precio', 'Precio Propiedad', 'Precio propiedad'])
             });
           });
         });
 
         return picks;
+      }
+
+      // ── Compute date range from CSV ──
+      function getDateRange(rows) {
+        var dates = [];
+        rows.forEach(function(r) {
+          var d = r['Fecha Alta'] || '';
+          if (d) dates.push(d);
+        });
+        if (dates.length === 0) return { from: '', to: '' };
+        dates.sort(function(a, b) {
+          var pa = parseDateStr(a), pb = parseDateStr(b);
+          return (pa || 0) - (pb || 0);
+        });
+        return { from: dates[0], to: dates[dates.length - 1] };
+      }
+
+      function parseDateStr(s) {
+        // Try DD/MM/YYYY
+        var m = s.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+        if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1])).getTime();
+        return null;
       }
 
       // ── CSV dropzone ──
@@ -3418,7 +3554,7 @@
         });
 
         var html = '<table><thead><tr>' +
-          '<th>ID</th><th>Ref</th><th>Comercial</th><th>Fecha</th><th>Tipo</th><th>Asunto</th>' +
+          '<th>ID</th><th>Ref</th><th>Asesor</th><th>Fecha</th><th>Tipo</th><th>Asunto</th>' +
           '</tr></thead><tbody>';
         rows.slice(0, 50).forEach(function(r) {
           var isCancelled = (r['Tipo Seguimiento'] || '').toLowerCase().indexOf('cancelada') !== -1;
@@ -3435,13 +3571,13 @@
         if (rows.length > 50) html += '<div style="padding:8px;text-align:center;color:var(--gray-500);font-size:12px;">Mostrando 50 de ' + rows.length + ' filas</div>';
         csvPreview.innerHTML = html;
 
-        var comerciales = Object.keys(groups);
-        var totalToAudit = comerciales.reduce(function(sum, com) {
+        var asesores = Object.keys(groups);
+        var totalToAudit = asesores.reduce(function(sum, com) {
           return sum + Math.min(groups[com], 2);
         }, 0);
         csvSummary.innerHTML = '<strong>' + rows.length + ' visitas</strong> encontradas (' +
-          cancelledCount + ' canceladas). <strong>' + comerciales.length + ' comerciales</strong>: ' +
-          comerciales.join(', ') + '. Se seleccionaran <strong>2 visitas aleatorias por comercial</strong> (' + totalToAudit + ' en total) para auditar.';
+          cancelledCount + ' canceladas). <strong>' + asesores.length + ' asesores</strong>: ' +
+          asesores.join(', ') + '. Se seleccionaran <strong>2 visitas aleatorias por asesor</strong> (' + totalToAudit + ' en total) para auditar.';
       }
 
       btnNew.addEventListener('click', function() {
@@ -3467,9 +3603,8 @@
         btnProcess.textContent = 'Procesando...';
 
         var checks = selectRandomChecks(parsedRows);
-        var now = new Date();
-        var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-        var defaultName = 'Auditoria ' + monthNames[now.getMonth()] + ' ' + now.getFullYear();
+        var range = getDateRange(parsedRows);
+        var defaultName = 'Auditoria Visitas desde ' + (range.from || '?') + ' hasta ' + (range.to || '?');
 
         sb.auth.getUser().then(function(res) {
           var userId = res.data && res.data.user ? res.data.user.id : null;
@@ -3494,6 +3629,10 @@
               fecha_visita: c.fecha_visita,
               id_seguimiento: c.id_seguimiento,
               asunto: c.asunto,
+              nombre_cliente: c.nombre_cliente,
+              tipo_propiedad: c.tipo_propiedad,
+              direccion_propiedad: c.direccion_propiedad,
+              precio_propiedad: c.precio_propiedad,
               status: 'pending'
             };
           });
@@ -3518,6 +3657,8 @@
       // ── Load sessions list ──
       function loadSessions() {
         sessionsContainer.innerHTML = '<div class="audit-empty">Cargando...</div>';
+
+        // Load sessions + their checks for summary counts
         sb.from('audit_sessions')
           .select('*')
           .order('created_at', { ascending: false })
@@ -3532,58 +3673,91 @@
               sessionsContainer.innerHTML = '<div class="audit-empty">No hay auditorias todavia. Crea una nueva para empezar.</div>';
               return;
             }
-            var html = '';
-            sessions.forEach(function(s) {
-              var statusClass = s.status || 'pending';
-              var statusLabel = statusClass === 'complete' ? 'Completo' :
-                                statusClass === 'partial' ? 'Parcial (' + s.completed_checks + '/' + s.total_checks + ')' :
-                                'Pendiente';
-              var dateStr = new Date(s.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-              html += '<div class="audit-session-row" data-session-id="' + s.id + '">' +
-                '<div class="audit-session-info">' +
-                  '<div class="audit-session-name">' + esc(s.name) + '</div>' +
-                  '<div class="audit-session-date">' + dateStr + '</div>' +
-                '</div>' +
-                '<div style="display:flex;align-items:center;gap:10px;">' +
-                  '<span class="audit-status-badge ' + statusClass + '">' + statusLabel + '</span>' +
-                  '<button class="audit-delete-session-btn" data-session-id="' + s.id + '" title="Eliminar auditoria" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:4px;border-radius:6px;transition:color 0.15s;">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
-                  '</button>' +
-                '</div>' +
-              '</div>';
-            });
-            sessionsContainer.innerHTML = html;
 
-            // Attach click handlers
-            sessionsContainer.querySelectorAll('.audit-session-row').forEach(function(row) {
-              row.addEventListener('click', function(e) {
-                if (e.target.closest('.audit-delete-session-btn')) return;
-                loadSessionDetail(row.getAttribute('data-session-id'));
-              });
-            });
+            // Load checks for all sessions to get summary counts
+            var sessionIds = sessions.map(function(s) { return s.id; });
+            sb.from('audit_checks').select('session_id, status, notes').in('session_id', sessionIds)
+              .then(function(checksRes) {
+                var allChecks = (checksRes.data || []);
+                // Group by session
+                var checksBySession = {};
+                allChecks.forEach(function(c) {
+                  if (!checksBySession[c.session_id]) checksBySession[c.session_id] = [];
+                  checksBySession[c.session_id].push(c);
+                });
 
-            // Delete session buttons
-            sessionsContainer.querySelectorAll('.audit-delete-session-btn').forEach(function(btn) {
-              btn.addEventListener('mouseenter', function() { btn.style.color = '#991b1b'; });
-              btn.addEventListener('mouseleave', function() { btn.style.color = 'var(--gray-400)'; });
-              btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var sid = btn.getAttribute('data-session-id');
-                if (confirm('Eliminar esta auditoria y todos sus datos?')) {
-                  deleteSession(sid);
-                }
+                var html = '';
+                sessions.forEach(function(s) {
+                  var sChecks = checksBySession[s.id] || [];
+                  var counts = computeStatusCounts(sChecks);
+                  var dateStr = new Date(s.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                  html += '<div class="audit-session-row" data-session-id="' + s.id + '">' +
+                    '<div class="audit-session-info">' +
+                      '<div class="audit-session-name">' + esc(s.name) + '</div>' +
+                      '<div class="audit-session-date">' + dateStr + '</div>' +
+                      '<div class="audit-session-summary">' +
+                        (counts.verified > 0 ? '<span class="audit-session-summary-item" style="color:#16a34a;"><span class="audit-result-dot green"></span>' + counts.verified + ' ok</span>' : '') +
+                        (counts.incomplete > 0 ? '<span class="audit-session-summary-item" style="color:#d97706;"><span class="audit-result-dot orange"></span>' + counts.incomplete + ' incompletas</span>' : '') +
+                        (counts.not_found > 0 ? '<span class="audit-session-summary-item" style="color:#dc2626;"><span class="audit-result-dot red"></span>' + counts.not_found + ' no encontradas</span>' : '') +
+                        (counts.pending > 0 ? '<span class="audit-session-summary-item" style="color:#9ca3af;"><span class="audit-result-dot gray"></span>' + counts.pending + ' pendientes</span>' : '') +
+                      '</div>' +
+                    '</div>' +
+                    '<div style="display:flex;align-items:center;gap:10px;">' +
+                      '<button class="audit-delete-session-btn" data-session-id="' + s.id + '" title="Eliminar auditoria" style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:4px;border-radius:6px;transition:color 0.15s;">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+                      '</button>' +
+                    '</div>' +
+                  '</div>';
+                });
+                sessionsContainer.innerHTML = html;
+
+                // Attach click handlers
+                sessionsContainer.querySelectorAll('.audit-session-row').forEach(function(row) {
+                  row.addEventListener('click', function(e) {
+                    if (e.target.closest('.audit-delete-session-btn')) return;
+                    loadSessionDetail(row.getAttribute('data-session-id'));
+                  });
+                });
+
+                // Delete session buttons
+                sessionsContainer.querySelectorAll('.audit-delete-session-btn').forEach(function(btn) {
+                  btn.addEventListener('mouseenter', function() { btn.style.color = '#991b1b'; });
+                  btn.addEventListener('mouseleave', function() { btn.style.color = 'var(--gray-400)'; });
+                  btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var sid = btn.getAttribute('data-session-id');
+                    if (confirm('Eliminar esta auditoria y todos sus datos?')) {
+                      deleteSession(sid);
+                    }
+                  });
+                });
               });
-            });
           });
+      }
+
+      // ── Compute status counts ──
+      function computeStatusCounts(checks) {
+        var verified = 0, incomplete = 0, not_found = 0, pending = 0;
+        checks.forEach(function(c) {
+          if (c.status === 'verified') {
+            verified++;
+          } else if (c.status === 'not_found') {
+            not_found++;
+          } else if (c.status === 'incomplete') {
+            incomplete++;
+          } else {
+            pending++;
+          }
+        });
+        return { verified: verified, incomplete: incomplete, not_found: not_found, pending: pending };
       }
 
       // ── Delete session ──
       function deleteSession(sessionId) {
-        // Delete checks first (cascade should handle it, but be safe)
         sb.from('audit_sessions').delete().eq('id', sessionId)
           .then(function(res) {
             if (res.error) throw res.error;
-            // Also clean up storage files for this session
             sb.storage.from('hojas-visita').list(sessionId).then(function(listRes) {
               if (listRes.data && listRes.data.length > 0) {
                 var paths = listRes.data.map(function(f) { return sessionId + '/' + f.name; });
@@ -3603,6 +3777,8 @@
         currentSessionId = sessionId;
         showSubView('detail');
         checksContainer.innerHTML = '<div class="audit-empty">Cargando...</div>';
+        resultSummary.innerHTML = '';
+        batchUploadEl.innerHTML = '';
 
         Promise.all([
           sb.from('audit_sessions').select('*').eq('id', sessionId).single(),
@@ -3621,6 +3797,9 @@
           currentChecksMap = {};
           checks.forEach(function(c) { currentChecksMap[c.id] = c; });
 
+          // Check if batch PDF already uploaded
+          currentSessionHojaUrl = session.hoja_url || null;
+
           // Render header
           detailName.textContent = session.name;
           detailName.style.cursor = 'pointer';
@@ -3629,23 +3808,61 @@
 
           var statusClass = session.status || 'pending';
           var statusLabel = statusClass === 'complete' ? 'Completo' :
-                            statusClass === 'partial' ? 'Parcial (' + session.completed_checks + '/' + session.total_checks + ')' :
+                            statusClass === 'partial' ? 'En proceso' :
                             'Pendiente';
           detailStatus.className = 'audit-status-badge ' + statusClass;
           detailStatus.textContent = statusLabel;
 
-          // Group checks by comercial
+          // ── Result summary ──
+          var counts = computeStatusCounts(checks);
+          var summaryHtml = '<div class="audit-result-summary">';
+          summaryHtml += '<div class="audit-result-item"><span class="audit-result-dot green"></span> Verificacion automatica ok: <strong>' + counts.verified + '</strong></div>';
+          summaryHtml += '<div class="audit-result-item"><span class="audit-result-dot orange"></span> Incompletas: <strong>' + counts.incomplete + '</strong></div>';
+          summaryHtml += '<div class="audit-result-item"><span class="audit-result-dot red"></span> No encontradas: <strong>' + counts.not_found + '</strong></div>';
+          if (counts.pending > 0) summaryHtml += '<div class="audit-result-item"><span class="audit-result-dot gray"></span> Pendientes: <strong>' + counts.pending + '</strong></div>';
+          summaryHtml += '</div>';
+          resultSummary.innerHTML = summaryHtml;
+
+          // ── Batch upload area ──
+          var allProcessed = checks.every(function(c) { return c.status !== 'pending'; });
+          if (!allProcessed) {
+            batchUploadEl.innerHTML = '<div class="audit-batch-dropzone" id="audit-batch-dz">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;margin-bottom:8px;color:var(--blue);">' +
+                '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+                '<polyline points="17 8 12 3 7 8"/>' +
+                '<line x1="12" y1="3" x2="12" y2="15"/>' +
+              '</svg>' +
+              '<div style="font-weight:600;color:var(--gray-700);margin-bottom:4px;">Sube el PDF con todas las hojas de visita</div>' +
+              '<div style="font-size:12px;">Arrastra el PDF aqui o <span style="color:var(--blue);cursor:pointer;">selecciona un archivo</span></div>' +
+              '<input type="file" accept=".pdf" style="display:none;" id="audit-batch-input">' +
+            '</div>';
+            attachBatchUploadHandlers();
+          } else if (currentSessionHojaUrl) {
+            batchUploadEl.innerHTML = '<div style="margin-bottom:16px;display:flex;gap:8px;align-items:center;">' +
+              '<button class="audit-btn-secondary" id="audit-view-batch-pdf">Ver PDF de hojas de visita</button>' +
+              '<button class="audit-btn-secondary" id="audit-download-batch-pdf">Descargar PDF</button>' +
+            '</div>';
+            document.getElementById('audit-view-batch-pdf').addEventListener('click', function() {
+              window.open(currentSessionHojaUrl, '_blank');
+            });
+            document.getElementById('audit-download-batch-pdf').addEventListener('click', function() {
+              downloadBatchPdf();
+            });
+          }
+
+          // ── Group checks by asesor ──
           var groups = {};
           checks.forEach(function(c) {
-            if (!groups[c.comercial]) groups[c.comercial] = [];
-            groups[c.comercial].push(c);
+            var asesor = c.comercial || 'Sin asignar';
+            if (!groups[asesor]) groups[asesor] = [];
+            groups[asesor].push(c);
           });
 
           var html = '';
-          Object.keys(groups).sort().forEach(function(com) {
+          Object.keys(groups).sort().forEach(function(asesor) {
             html += '<div class="audit-comercial-group">';
-            html += '<h3>' + esc(com) + '</h3>';
-            groups[com].forEach(function(check) {
+            html += '<h3>' + esc(asesor) + '</h3>';
+            groups[asesor].forEach(function(check) {
               html += renderCheckCard(check);
             });
             html += '</div>';
@@ -3661,68 +3878,58 @@
 
       function renderCheckCard(check) {
         var statusIcon = '';
-        var statusText = '';
         var actionsHtml = '';
+        var verData = null;
+        try { verData = typeof check.notes === 'string' ? JSON.parse(check.notes) : check.notes; } catch(e) {}
 
-        // Download & delete buttons (shown whenever a file has been uploaded)
-        var fileButtons = '';
-        if (check.hoja_url) {
-          fileButtons = '<div class="audit-check-actions" style="margin-top:8px;">' +
-            '<button class="audit-btn-secondary audit-download-btn" data-check-id="' + check.id + '" data-url="' + esc(check.hoja_url) + '" data-filename="' + esc(check.hoja_filename || 'hoja') + '">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-              'Descargar' +
-            '</button>' +
-            '<button class="audit-btn-danger audit-delete-file-btn" data-check-id="' + check.id + '">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
-              'Eliminar archivo' +
-            '</button>' +
-          '</div>';
-        }
-
-        if (check.status === 'verified') {
-          statusIcon = '<span class="audit-check-status verified">&#10003; Verificada</span>';
-          if (check.hoja_filename) statusIcon += '<div class="audit-file-info">Archivo: ' + esc(check.hoja_filename) + '</div>';
-          // Show auto-verification details if available
-          var verData = null;
-          try { verData = JSON.parse(check.notes); } catch(e) {}
-          if (verData && verData.auto_verified && verData.fields) {
-            statusIcon += '<div style="margin-top:6px;font-size:11px;padding:6px 8px;background:var(--green-50,#f0fdf4);border-radius:6px;border:1px solid var(--green-200,#bbf7d0);">';
-            statusIcon += '<div style="font-weight:600;color:var(--green-700,#15803d);margin-bottom:4px;">Verificacion automatica</div>';
+        // Build verification details block (shared between verified and incomplete)
+        function buildVerificationDetails(verData, bgColor, borderColor, titleColor, title) {
+          var html = '<div style="margin-top:6px;font-size:11px;padding:6px 8px;background:' + bgColor + ';border-radius:6px;border:1px solid ' + borderColor + ';">';
+          html += '<div style="font-weight:600;color:' + titleColor + ';margin-bottom:4px;">' + title + '</div>';
+          if (verData && verData.fields) {
             Object.keys(verData.fields).forEach(function(key) {
               var f = verData.fields[key];
               var icon = f.match ? '&#10003;' : '&#10007;';
-              var color = f.match ? 'var(--green-600,#16a34a)' : 'var(--red-600,#dc2626)';
-              statusIcon += '<div style="color:' + color + ';">' + icon + ' <strong>' + esc(key) + '</strong>: ' + esc(f.found || '(vacio)') + '</div>';
+              var color = f.match ? '#16a34a' : '#dc2626';
+              var label = FIELD_LABELS[key] || key;
+              html += '<div style="color:' + color + ';">' + icon + ' <strong>' + esc(label) + '</strong>: ' + esc(f.found || '(vacio)') + '</div>';
             });
-            statusIcon += '</div>';
           }
-          actionsHtml = fileButtons;
+          html += '</div>';
+          return html;
+        }
+
+        // View hoja button (if batch PDF uploaded)
+        var viewHojaBtn = '';
+        if (currentSessionHojaUrl) {
+          viewHojaBtn = '<button class="audit-view-btn audit-view-hoja-btn" data-url="' + esc(currentSessionHojaUrl) + '">Ver hoja de visita</button> ';
+        }
+
+        if (check.status === 'verified') {
+          statusIcon = '<span class="audit-check-status verified">&#10003; Verificacion automatica ok</span>';
+          if (verData && verData.fields) {
+            statusIcon += buildVerificationDetails(verData, '#f0fdf4', '#bbf7d0', '#15803d', 'Detalles verificacion');
+          }
+          actionsHtml = '<div class="audit-check-actions" style="margin-top:8px;">' + viewHojaBtn + '</div>';
+        } else if (check.status === 'incomplete') {
+          statusIcon = '<span class="audit-check-status incomplete">&#9888; Incompleto</span>';
+          if (verData && verData.fields) {
+            statusIcon += buildVerificationDetails(verData, '#fffbeb', '#fde68a', '#b45309', 'Detalles verificacion');
+          }
+          actionsHtml = '<div class="audit-check-actions" style="margin-top:8px;">' + viewHojaBtn + '</div>';
         } else if (check.status === 'not_found') {
           statusIcon = '<span class="audit-check-status not_found">&#10007; No encontrada</span>';
-          if (check.notes) statusIcon += '<div style="font-size:11px;color:var(--gray-500);margin-top:4px;">Nota: ' + esc(check.notes) + '</div>';
-        } else if (check.status === 'uploaded') {
-          statusIcon = '<span class="audit-check-status uploaded">&#8593; Subida: ' + esc(check.hoja_filename || 'archivo') + '</span>';
-          actionsHtml = '<div class="audit-check-actions" style="margin-top:8px;">' +
-            '<button class="btn-primary audit-verify-btn" data-check-id="' + check.id + '">Marcar verificada</button>' +
-            '<button class="audit-btn-danger audit-notfound-btn" data-check-id="' + check.id + '">No encontrada</button>' +
-          '</div>' + fileButtons;
+          actionsHtml = '<div class="audit-check-actions" style="margin-top:8px;">' + viewHojaBtn + '</div>';
         } else {
           statusIcon = '<span class="audit-check-status pending">&#9679; Pendiente</span>';
-          actionsHtml = '<div style="margin-top:8px;">' +
-            '<div class="audit-mini-dropzone" data-check-id="' + check.id + '">' +
-              'Arrastra la hoja de visita aqui o <span style="color:var(--blue);cursor:pointer;">selecciona un archivo</span>' +
-              '<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;">' +
-            '</div>' +
-            '<div class="audit-check-actions" style="margin-top:8px;">' +
-              '<button class="audit-btn-danger audit-notfound-btn" data-check-id="' + check.id + '">Marcar no encontrada</button>' +
-            '</div>' +
-          '</div>';
         }
 
         return '<div class="audit-check-card" data-check-id="' + check.id + '">' +
           '<div class="audit-check-info">' +
-            '<div class="audit-check-field"><strong>Ref</strong><span>' + esc(check.ref_propiedad) + '</span></div>' +
-            '<div class="audit-check-field"><strong>Num Demanda</strong><span>' + esc(check.num_demanda) + '</span></div>' +
+            '<div class="audit-check-field"><strong>Asesor</strong><span>' + esc(check.comercial) + '</span></div>' +
+            '<div class="audit-check-field"><strong>Nombre cliente</strong><span>' + esc(check.nombre_cliente || '') + '</span></div>' +
+            '<div class="audit-check-field"><strong>Ref. propiedad</strong><span>' + esc(check.ref_propiedad) + '</span></div>' +
+            '<div class="audit-check-field"><strong>N\u00ba solicitud/demanda</strong><span>' + esc(check.num_demanda) + '</span></div>' +
             '<div class="audit-check-field"><strong>Fecha</strong><span>' + esc(check.fecha_visita) + '</span></div>' +
             '<div class="audit-check-field"><strong>ID Seguimiento</strong><span>' + esc(check.id_seguimiento) + '</span></div>' +
           '</div>' +
@@ -3733,198 +3940,157 @@
       }
 
       function attachCheckHandlers() {
-        // Mini dropzones for file upload
-        checksContainer.querySelectorAll('.audit-mini-dropzone').forEach(function(dz) {
-          var checkId = dz.getAttribute('data-check-id');
-          var input = dz.querySelector('input[type="file"]');
-
-          dz.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            dz.classList.add('over');
-          });
-          ['dragleave', 'dragend'].forEach(function(ev) {
-            dz.addEventListener(ev, function() { dz.classList.remove('over'); });
-          });
-          dz.addEventListener('drop', function(e) {
-            e.preventDefault();
-            dz.classList.remove('over');
-            if (e.dataTransfer.files[0]) uploadHoja(checkId, e.dataTransfer.files[0]);
-          });
-          dz.addEventListener('click', function(e) {
-            if (e.target.tagName !== 'INPUT') input.click();
-          });
-          input.addEventListener('change', function() {
-            if (input.files[0]) uploadHoja(checkId, input.files[0]);
-          });
-        });
-
-        // Verify buttons
-        checksContainer.querySelectorAll('.audit-verify-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            markStatus(btn.getAttribute('data-check-id'), 'verified', null);
-          });
-        });
-
-        // Not found buttons
-        checksContainer.querySelectorAll('.audit-notfound-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            var note = prompt('Nota opcional (por que no se encontro):');
-            if (note === null) return; // user cancelled
-            markStatus(btn.getAttribute('data-check-id'), 'not_found', note || null);
-          });
-        });
-
-        // Download buttons
-        checksContainer.querySelectorAll('.audit-download-btn').forEach(function(btn) {
+        // View hoja buttons
+        checksContainer.querySelectorAll('.audit-view-hoja-btn').forEach(function(btn) {
           btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            var checkId = btn.getAttribute('data-check-id');
-            var filename = btn.getAttribute('data-filename');
-            downloadHoja(checkId, filename);
-          });
-        });
-
-        // Delete file buttons
-        checksContainer.querySelectorAll('.audit-delete-file-btn').forEach(function(btn) {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var checkId = btn.getAttribute('data-check-id');
-            if (confirm('Eliminar el archivo subido? La visita volvera a estado pendiente.')) {
-              deleteHoja(checkId);
-            }
+            var url = btn.getAttribute('data-url');
+            window.open(url, '_blank');
           });
         });
       }
 
-      // ── Upload hoja de visita ──
-      function uploadHoja(checkId, file) {
-        var ext = file.name.split('.').pop().toLowerCase();
-        var path = currentSessionId + '/' + checkId + '.' + ext;
-        var isPdf = ext === 'pdf';
+      // ── Batch upload handlers ──
+      function attachBatchUploadHandlers() {
+        var dz = document.getElementById('audit-batch-dz');
+        var input = document.getElementById('audit-batch-input');
+        if (!dz || !input) return;
 
-        // Show uploading state
-        var card = checksContainer.querySelector('[data-check-id="' + checkId + '"].audit-check-card');
-        if (card) {
-          var dz = card.querySelector('.audit-mini-dropzone');
-          if (dz) dz.innerHTML = '<span style="color:var(--blue);">Subiendo...</span>';
+        dz.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          dz.classList.add('over');
+        });
+        ['dragleave', 'dragend'].forEach(function(ev) {
+          dz.addEventListener(ev, function() { dz.classList.remove('over'); });
+        });
+        dz.addEventListener('drop', function(e) {
+          e.preventDefault();
+          dz.classList.remove('over');
+          var f = e.dataTransfer.files[0];
+          if (f && f.name.toLowerCase().endsWith('.pdf')) handleBatchUpload(f);
+        });
+        dz.addEventListener('click', function(e) {
+          if (e.target.tagName !== 'INPUT') input.click();
+        });
+        input.addEventListener('change', function() {
+          if (input.files[0]) handleBatchUpload(input.files[0]);
+        });
+      }
+
+      // ── Handle batch PDF upload ──
+      function handleBatchUpload(file) {
+        var dz = document.getElementById('audit-batch-dz');
+        if (dz) {
+          dz.innerHTML = '<div style="color:var(--blue);font-weight:600;">Subiendo PDF...</div>';
         }
 
+        var path = currentSessionId + '/hojas-batch.pdf';
+
+        // 1. Upload to Supabase storage
         sb.storage.from('hojas-visita').upload(path, file, { upsert: true })
           .then(function(res) {
             if (res.error) throw res.error;
             var url = sb.storage.from('hojas-visita').getPublicUrl(path).data.publicUrl;
-            return sb.from('audit_checks').update({
-              status: 'uploaded',
-              hoja_url: url,
-              hoja_filename: file.name
-            }).eq('id', checkId);
-          })
-          .then(function(res) {
-            if (res.error) throw res.error;
+            currentSessionHojaUrl = url;
 
-            // If PDF, auto-verify content against expected visit data
-            if (isPdf) {
-              verifyHoja(checkId, file);
-            } else {
-              loadSessionDetail(currentSessionId);
+            // Save URL to session
+            return sb.from('audit_sessions').update({ hoja_url: url }).eq('id', currentSessionId);
+          })
+          .then(function() {
+            if (dz) {
+              dz.innerHTML = '<div style="color:var(--blue);font-weight:600;">&#8987; Verificando hojas de visita con IA... Esto puede tardar unos minutos.</div>';
             }
+
+            // 2. Send to batch verification endpoint
+            var checksArr = Object.values(currentChecksMap).map(function(c) {
+              return {
+                id: c.id,
+                comercial: c.comercial,
+                ref_propiedad: c.ref_propiedad,
+                num_demanda: c.num_demanda,
+                fecha_visita: c.fecha_visita,
+                id_seguimiento: c.id_seguimiento,
+                nombre_cliente: c.nombre_cliente || '',
+                tipo_propiedad: c.tipo_propiedad || '',
+                direccion_propiedad: c.direccion_propiedad || '',
+                precio_propiedad: c.precio_propiedad || ''
+              };
+            });
+
+            var formData = new FormData();
+            formData.append('pdf', file);
+            formData.append('checks', JSON.stringify(checksArr));
+
+            return fetch('/verify-hojas-batch', { method: 'POST', body: formData });
           })
-          .catch(function(err) {
-            console.error('Upload error:', err);
-            alert('Error al subir el archivo: ' + (err.message || err));
-            loadSessionDetail(currentSessionId);
-          });
-      }
-
-      // ── Verify hoja de visita PDF ──
-      function verifyHoja(checkId, file) {
-        var check = currentChecksMap[checkId];
-        if (!check) {
-          loadSessionDetail(currentSessionId);
-          return;
-        }
-
-        // Show verifying state
-        var card = checksContainer.querySelector('[data-check-id="' + checkId + '"].audit-check-card');
-        if (card) {
-          var dz = card.querySelector('.audit-mini-dropzone');
-          var statusEl = card.querySelector('.audit-check-status');
-          if (dz) dz.innerHTML = '<span style="color:var(--blue);">&#8987; Verificando contenido del PDF...</span>';
-          if (statusEl) statusEl.innerHTML = '<span style="color:var(--blue);">&#8987; Verificando contenido del PDF...</span>';
-        }
-
-        var formData = new FormData();
-        formData.append('pdf', file);
-        formData.append('comercial', check.comercial || '');
-        formData.append('ref_propiedad', check.ref_propiedad || '');
-        formData.append('num_demanda', check.num_demanda || '');
-        formData.append('fecha_visita', check.fecha_visita || '');
-        formData.append('id_seguimiento', check.id_seguimiento || '');
-
-        fetch('/verify-hoja', { method: 'POST', body: formData })
           .then(function(resp) { return resp.json(); })
           .then(function(data) {
-            if (data.match) {
-              // Auto-verify: content matches
-              var verificationNote = JSON.stringify({
-                auto_verified: true,
-                fields: data.fields,
-                extracted: data.extracted
-              });
-              return sb.from('audit_checks').update({
-                status: 'verified',
-                verified_at: new Date().toISOString(),
-                notes: verificationNote
-              }).eq('id', checkId).then(function(upRes) {
-                if (upRes.error) throw upRes.error;
-                updateSessionStatus(currentSessionId);
-                loadSessionDetail(currentSessionId);
-              });
-            } else {
-              // Mismatch: show details and keep as 'uploaded'
-              var msg = 'La hoja de visita NO coincide con la visita esperada:\n\n';
-              if (data.fields) {
-                Object.keys(data.fields).forEach(function(key) {
-                  var f = data.fields[key];
-                  var icon = f.match ? '✓' : '✗';
-                  msg += icon + ' ' + key + ': esperado "' + f.expected + '", encontrado "' + f.found + '"\n';
-                });
+            if (data.error) throw new Error(data.error);
+
+            // 3. Update each check based on results
+            var results = data.results || {};
+            var updates = [];
+
+            Object.keys(currentChecksMap).forEach(function(checkId) {
+              var result = results[checkId];
+              var update;
+
+              if (!result) {
+                // No matching page found
+                update = sb.from('audit_checks').update({
+                  status: 'not_found',
+                  notes: null
+                }).eq('id', checkId);
+              } else if (result.match) {
+                // All fields match
+                update = sb.from('audit_checks').update({
+                  status: 'verified',
+                  verified_at: new Date().toISOString(),
+                  notes: JSON.stringify({
+                    auto_verified: true,
+                    fields: result.fields,
+                    extracted: result.extracted,
+                    page: result.page
+                  })
+                }).eq('id', checkId);
+              } else {
+                // Partial match — incomplete
+                update = sb.from('audit_checks').update({
+                  status: 'incomplete',
+                  notes: JSON.stringify({
+                    auto_verified: false,
+                    fields: result.fields,
+                    extracted: result.extracted,
+                    page: result.page
+                  })
+                }).eq('id', checkId);
               }
-              if (data.error) {
-                msg += '\nError: ' + data.error;
-              }
-              msg += '\nPuedes verificar manualmente o subir otro archivo.';
-              alert(msg);
-              loadSessionDetail(currentSessionId);
-            }
+              updates.push(update);
+            });
+
+            return Promise.all(updates);
+          })
+          .then(function() {
+            updateSessionStatus(currentSessionId);
+            loadSessionDetail(currentSessionId);
           })
           .catch(function(err) {
-            console.error('Verification error:', err);
-            // Verification failed but upload succeeded — just reload
+            console.error('Batch verification error:', err);
+            alert('Error al verificar las hojas: ' + (err.message || err));
             loadSessionDetail(currentSessionId);
           });
       }
 
-      // ── Download hoja de visita ──
-      function downloadHoja(checkId, filename) {
-        // Get check to find the storage path
-        sb.from('audit_checks').select('hoja_url, hoja_filename, session_id').eq('id', checkId).single()
+      // ── Download batch PDF ──
+      function downloadBatchPdf() {
+        var path = currentSessionId + '/hojas-batch.pdf';
+        sb.storage.from('hojas-visita').download(path)
           .then(function(res) {
             if (res.error) throw res.error;
-            var check = res.data;
-            // Find the file in storage by listing session folder
-            var ext = (check.hoja_filename || '').split('.').pop() || 'pdf';
-            var path = check.session_id + '/' + checkId + '.' + ext;
-
-            return sb.storage.from('hojas-visita').download(path);
-          })
-          .then(function(res) {
-            if (res.error) throw res.error;
-            // Create download link
             var url = URL.createObjectURL(res.data);
             var a = document.createElement('a');
             a.href = url;
-            a.download = filename || 'hoja-visita';
+            a.download = 'hojas-visita.pdf';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -3936,38 +4102,6 @@
           });
       }
 
-      // ── Delete hoja de visita ──
-      function deleteHoja(checkId) {
-        sb.from('audit_checks').select('hoja_filename, session_id').eq('id', checkId).single()
-          .then(function(res) {
-            if (res.error) throw res.error;
-            var check = res.data;
-            var ext = (check.hoja_filename || '').split('.').pop() || 'pdf';
-            var path = check.session_id + '/' + checkId + '.' + ext;
-
-            // Delete file from storage
-            return sb.storage.from('hojas-visita').remove([path]).then(function(delRes) {
-              if (delRes.error) throw delRes.error;
-              // Reset check to pending
-              return sb.from('audit_checks').update({
-                status: 'pending',
-                hoja_url: null,
-                hoja_filename: null,
-                verified_at: null,
-                notes: null
-              }).eq('id', checkId);
-            });
-          })
-          .then(function(res) {
-            if (res.error) throw res.error;
-            loadSessionDetail(currentSessionId);
-          })
-          .catch(function(err) {
-            console.error('Delete error:', err);
-            alert('Error al eliminar: ' + (err.message || err));
-          });
-      }
-
       // ── Update session status based on checks ──
       function updateSessionStatus(sessionId) {
         sb.from('audit_checks').select('status').eq('session_id', sessionId)
@@ -3976,7 +4110,7 @@
             var checks = res.data || [];
             var total = checks.length;
             var completed = checks.filter(function(c) {
-              return c.status === 'verified' || c.status === 'not_found';
+              return c.status === 'verified' || c.status === 'not_found' || c.status === 'incomplete';
             }).length;
             var status = completed === 0 ? 'pending' : (completed >= total ? 'complete' : 'partial');
 
@@ -3985,24 +4119,6 @@
               total_checks: total,
               completed_checks: completed
             }).eq('id', sessionId);
-          });
-      }
-
-      // ── Mark check status ──
-      function markStatus(checkId, status, notes) {
-        var update = { status: status };
-        if (notes !== null && notes !== undefined) update.notes = notes;
-        if (status === 'verified') update.verified_at = new Date().toISOString();
-
-        sb.from('audit_checks').update(update).eq('id', checkId)
-          .then(function(res) {
-            if (res.error) throw res.error;
-            updateSessionStatus(currentSessionId);
-            loadSessionDetail(currentSessionId);
-          })
-          .catch(function(err) {
-            console.error('Status update error:', err);
-            alert('Error al actualizar: ' + (err.message || err));
           });
       }
 
