@@ -3628,7 +3628,7 @@
           return sb.from('audit_sessions').insert({
             name: defaultName,
             created_by: userId,
-            status: 'pending',
+            status: 'not_found',
             raw_csv_data: parsedRows,
             total_checks: checks.length,
             completed_checks: 0
@@ -3649,7 +3649,7 @@
               tipo_propiedad: c.tipo_propiedad,
               direccion_propiedad: c.direccion_propiedad,
               precio_propiedad: c.precio_propiedad,
-              status: 'pending'
+              status: 'not_found'
             };
           });
           return sb.from('audit_checks').insert(checkRows).then(function(insRes) {
@@ -3716,7 +3716,6 @@
                         (counts.verified > 0 ? '<span class="audit-session-summary-item" style="color:#16a34a;"><span class="audit-result-dot green"></span>' + counts.verified + ' ok</span>' : '') +
                         (counts.incomplete > 0 ? '<span class="audit-session-summary-item" style="color:#d97706;"><span class="audit-result-dot orange"></span>' + counts.incomplete + ' incompletas</span>' : '') +
                         (counts.not_found > 0 ? '<span class="audit-session-summary-item" style="color:#dc2626;"><span class="audit-result-dot red"></span>' + counts.not_found + ' no encontradas</span>' : '') +
-                        (counts.pending > 0 ? '<span class="audit-session-summary-item" style="color:#9ca3af;"><span class="audit-result-dot gray"></span>' + counts.pending + ' pendientes</span>' : '') +
                       '</div>' +
                     '</div>' +
                     '<div style="display:flex;align-items:center;gap:10px;">' +
@@ -3754,19 +3753,17 @@
 
       // ── Compute status counts ──
       function computeStatusCounts(checks) {
-        var verified = 0, incomplete = 0, not_found = 0, pending = 0;
+        var verified = 0, incomplete = 0, not_found = 0;
         checks.forEach(function(c) {
           if (c.status === 'verified') {
             verified++;
-          } else if (c.status === 'not_found') {
-            not_found++;
           } else if (c.status === 'incomplete') {
             incomplete++;
           } else {
-            pending++;
+            not_found++;
           }
         });
-        return { verified: verified, incomplete: incomplete, not_found: not_found, pending: pending };
+        return { verified: verified, incomplete: incomplete, not_found: not_found };
       }
 
       // ── Delete session ──
@@ -3822,10 +3819,8 @@
           detailName.title = 'Haz click para editar el nombre';
           detailName.onclick = function() { editSessionName(session); };
 
-          var statusClass = session.status || 'pending';
-          var statusLabel = statusClass === 'complete' ? 'Completo' :
-                            statusClass === 'partial' ? 'En proceso' :
-                            'Pendiente';
+          var statusClass = session.status === 'complete' ? 'complete' : 'partial';
+          var statusLabel = statusClass === 'complete' ? 'Completo' : 'En proceso';
           detailStatus.className = 'audit-status-badge ' + statusClass;
           detailStatus.textContent = statusLabel;
 
@@ -3835,12 +3830,11 @@
           summaryHtml += '<div class="audit-result-item"><span class="audit-result-dot green"></span> Verificacion automatica ok: <strong>' + counts.verified + '</strong></div>';
           summaryHtml += '<div class="audit-result-item"><span class="audit-result-dot orange"></span> Incompletas: <strong>' + counts.incomplete + '</strong></div>';
           summaryHtml += '<div class="audit-result-item"><span class="audit-result-dot red"></span> No encontradas: <strong>' + counts.not_found + '</strong></div>';
-          if (counts.pending > 0) summaryHtml += '<div class="audit-result-item"><span class="audit-result-dot gray"></span> Pendientes: <strong>' + counts.pending + '</strong></div>';
           summaryHtml += '</div>';
           resultSummary.innerHTML = summaryHtml;
 
           // ── Batch upload area ──
-          var allProcessed = checks.every(function(c) { return c.status !== 'pending'; });
+          var allProcessed = checks.every(function(c) { return c.status === 'verified'; });
           if (!allProcessed) {
             batchUploadEl.innerHTML = '<div class="audit-batch-dropzone" id="audit-batch-dz">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;margin-bottom:8px;color:var(--blue);">' +
@@ -3933,11 +3927,9 @@
             statusIcon += buildVerificationDetails(verData, '#fffbeb', '#fde68a', '#b45309', 'Detalles verificacion');
           }
           actionsHtml = '<div class="audit-check-actions" style="margin-top:8px;">' + viewHojaBtn + '</div>';
-        } else if (check.status === 'not_found') {
+        } else {
           statusIcon = '<span class="audit-check-status not_found">&#10007; No encontrada</span>';
           actionsHtml = '<div class="audit-check-actions" style="margin-top:8px;">' + viewHojaBtn + '</div>';
-        } else {
-          statusIcon = '<span class="audit-check-status pending">&#9679; Pendiente</span>';
         }
 
         return '<div class="audit-check-card" data-check-id="' + check.id + '">' +
@@ -4126,9 +4118,9 @@
             var checks = res.data || [];
             var total = checks.length;
             var completed = checks.filter(function(c) {
-              return c.status === 'verified' || c.status === 'not_found' || c.status === 'incomplete';
+              return c.status === 'verified';
             }).length;
-            var status = completed === 0 ? 'pending' : (completed >= total ? 'complete' : 'partial');
+            var status = completed >= total ? 'complete' : 'partial';
 
             return sb.from('audit_sessions').update({
               status: status,
