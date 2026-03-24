@@ -3377,10 +3377,10 @@
         asesor: 'Asesor',
         nombre_cliente: 'Nombre cliente',
         ref_propiedad: 'Ref. propiedad',
-        solicitud_demanda: 'N\u00ba solicitud/demanda',
+        solicitud_demanda: 'Nº solicitud/demanda',
         fecha_visita: 'Fecha visita',
         tipo_propiedad: 'Tipo propiedad',
-        direccion_propiedad: 'Direcci\u00f3n propiedad',
+        direccion_propiedad: 'Dirección propiedad',
         precio_propiedad: 'Precio propiedad',
         firma_cliente: 'Firma cliente'
       };
@@ -3473,7 +3473,7 @@
               asunto: r['Asunto'] || '',
               nombre_cliente: csvCol(r, ['Nombre Cliente', 'Cliente', 'Nombre']),
               tipo_propiedad: csvCol(r, ['Tipo Propiedad', 'Tipo propiedad', 'Tipo']),
-              direccion_propiedad: csvCol(r, ['Direccion', 'Direcci\u00f3n', 'Direccion Propiedad', 'Direcci\u00f3n Propiedad']),
+              direccion_propiedad: csvCol(r, ['Direccion', 'Dirección', 'Direccion Propiedad', 'Dirección Propiedad']),
               precio_propiedad: csvCol(r, ['Precio', 'Precio Propiedad', 'Precio propiedad'])
             });
           });
@@ -3524,9 +3524,26 @@
       });
 
       function handleCSVFile(file) {
+        // Try UTF-8 first; if accented chars come out broken, retry as windows-1252
         var reader = new FileReader();
         reader.onload = function(e) {
-          parsedRows = parseCSV(e.target.result);
+          var text = e.target.result;
+          // Detect broken encoding: replacement char U+FFFD or lone ? near letters
+          if (text.indexOf('\uFFFD') !== -1) {
+            // Re-read with windows-1252 (common for CRM exports)
+            var reader2 = new FileReader();
+            reader2.onload = function(e2) {
+              finishCSV(e2.target.result);
+            };
+            reader2.readAsText(file, 'windows-1252');
+          } else {
+            finishCSV(text);
+          }
+        };
+        reader.readAsText(file, 'UTF-8');
+
+        function finishCSV(text) {
+          parsedRows = parseCSV(text);
           if (parsedRows.length === 0) {
             alert('El CSV esta vacio o no se pudo leer.');
             return;
@@ -3534,8 +3551,7 @@
           renderCSVPreview(parsedRows);
           csvDropzone.style.display = 'none';
           csvPreviewWrap.style.display = '';
-        };
-        reader.readAsText(file, 'UTF-8');
+        }
       }
 
       function renderCSVPreview(rows) {
@@ -3929,7 +3945,7 @@
             '<div class="audit-check-field"><strong>Asesor</strong><span>' + esc(check.comercial) + '</span></div>' +
             '<div class="audit-check-field"><strong>Nombre cliente</strong><span>' + esc(check.nombre_cliente || '') + '</span></div>' +
             '<div class="audit-check-field"><strong>Ref. propiedad</strong><span>' + esc(check.ref_propiedad) + '</span></div>' +
-            '<div class="audit-check-field"><strong>N\u00ba solicitud/demanda</strong><span>' + esc(check.num_demanda) + '</span></div>' +
+            '<div class="audit-check-field"><strong>Nº solicitud/demanda</strong><span>' + esc(check.num_demanda) + '</span></div>' +
             '<div class="audit-check-field"><strong>Fecha</strong><span>' + esc(check.fecha_visita) + '</span></div>' +
             '<div class="audit-check-field"><strong>ID Seguimiento</strong><span>' + esc(check.id_seguimiento) + '</span></div>' +
           '</div>' +
