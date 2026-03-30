@@ -982,17 +982,8 @@
     /* ── Account view ─────────────────────────────────── */
     #view-account { flex:1; display:none; background:var(--gray-bg); padding:40px 5vw; }
     #view-account.visible { display:block; }
-    .account-layout { display:flex; max-width:900px; margin:0 auto; gap:48px; }
-    .account-sidebar { width:200px; flex-shrink:0; }
-    .account-sidebar-title { font-size:24px; font-weight:700; color:var(--blue); margin-bottom:24px; }
-    .account-nav { display:flex; flex-direction:column; gap:2px; }
-    .account-nav-item { text-align:left; padding:10px 14px; font-size:14px; font-weight:500; color:var(--gray-600); background:none; border:none; border-radius:var(--radius-md); cursor:pointer; font-family:'Inter',sans-serif; }
-    .account-nav-item.active { background:var(--blue-muted); color:var(--blue); font-weight:600; }
-    .account-nav-item:hover:not(.active) { background:var(--gray-100); }
-    .account-main { flex:1; min-width:0; }
-    .account-section { display:none; }
-    .account-section.visible { display:block; }
-    .account-section-title { font-size:18px; font-weight:700; color:var(--gray-800); margin-bottom:24px; }
+    .account-layout { max-width:540px; margin:0 auto; }
+    .account-title { font-size:24px; font-weight:700; color:var(--blue); margin-bottom:24px; }
     .account-row { display:flex; align-items:center; justify-content:space-between; padding:16px 0; }
     .account-row-label { font-size:14px; color:var(--gray-600); }
     .account-row-value { font-size:14px; font-weight:500; color:var(--gray-800); }
@@ -1001,9 +992,6 @@
     .account-btn-outline:hover { background:var(--gray-50); border-color:var(--gray-400); }
     .account-btn-danger { color:var(--gray-400); cursor:not-allowed; border-color:var(--gray-200); }
     .account-btn-danger:hover { background:white; border-color:var(--gray-200); }
-    .account-coming-soon { text-align:center; padding:60px 20px; color:var(--gray-400); }
-    .account-coming-soon p:first-child { font-size:16px; font-weight:600; margin-bottom:8px; }
-    .account-coming-desc { font-size:13px; }
 
     /* ── Footer ────────────────────────────────────────── */
     .app-footer {
@@ -1652,7 +1640,6 @@
         display: none;
       }
       .account-layout { flex-direction:column; gap:24px; }
-      .account-sidebar { width:100%; }
       .app-footer {
         padding: 16px;
       }
@@ -1725,7 +1712,7 @@
       <h2>Contacto</h2>
       <p>MODELIA es una herramienta de automatizacion fiscal que genera ficheros AEAT a partir de escrituras notariales mediante inteligencia artificial.</p>
       <p>Si deseas una version personalizada con la imagen de tu despacho o empresa, o tienes cualquier consulta, escribenos a:</p>
-      <div class="contact-email">info@modelia.es</div>
+      <div class="contact-email">info@cardenas-grancanaria.com</div>
       <div class="modal-actions">
         <button class="modal-btn-close" id="modal-contact-close">Cerrar</button>
       </div>
@@ -1909,49 +1896,20 @@
   <!-- Account view -->
   <div id="view-account">
     <div class="account-layout">
-      <div class="account-sidebar">
-        <div class="account-sidebar-title">Cuenta</div>
-        <div class="account-nav">
-          <button class="account-nav-item active" data-account-tab="general">General</button>
-          <button class="account-nav-item" data-account-tab="billing">Facturacion</button>
-          <button class="account-nav-item" data-account-tab="usage">Uso</button>
-        </div>
+      <div class="account-title">Cuenta</div>
+      <div class="account-row">
+        <span class="account-row-label">Email</span>
+        <span class="account-row-value" id="account-email"></span>
       </div>
-      <div class="account-main">
-        <!-- General section -->
-        <div class="account-section visible" id="account-general">
-          <div class="account-section-title">General</div>
-          <div class="account-row">
-            <span class="account-row-label">Email</span>
-            <span class="account-row-value" id="account-email"></span>
-          </div>
-          <div class="account-divider"></div>
-          <div class="account-row">
-            <span class="account-row-label">Cerrar sesion</span>
-            <button class="account-btn-outline" id="account-logout">Cerrar sesion</button>
-          </div>
-          <div class="account-divider"></div>
-          <div class="account-row">
-            <span class="account-row-label">Eliminar cuenta</span>
-            <button class="account-btn-outline account-btn-danger" disabled>Eliminar cuenta</button>
-          </div>
-        </div>
-        <!-- Billing section -->
-        <div class="account-section" id="account-billing">
-          <div class="account-section-title">Facturacion</div>
-          <div class="account-coming-soon">
-            <p>Proximamente</p>
-            <p class="account-coming-desc">La gestion de facturacion estara disponible pronto.</p>
-          </div>
-        </div>
-        <!-- Usage section -->
-        <div class="account-section" id="account-usage">
-          <div class="account-section-title">Uso</div>
-          <div class="account-coming-soon">
-            <p>Proximamente</p>
-            <p class="account-coming-desc">Las estadisticas de uso estaran disponibles pronto.</p>
-          </div>
-        </div>
+      <div class="account-divider"></div>
+      <div class="account-row">
+        <span class="account-row-label">Cerrar sesion</span>
+        <button class="account-btn-outline" id="account-logout">Cerrar sesion</button>
+      </div>
+      <div class="account-divider"></div>
+      <div class="account-row">
+        <span class="account-row-label">Eliminar cuenta</span>
+        <button class="account-btn-outline account-btn-danger" disabled>Eliminar cuenta</button>
       </div>
     </div>
   </div>
@@ -2367,7 +2325,7 @@
         <br>
         <p><strong>API Keys:</strong> las claves API se almacenan únicamente en el almacenamiento local de tu navegador y se envían directamente al proveedor del servicio de IA. Nunca se almacenan en nuestros servidores.</p>
         <br>
-        <p><strong>Contacto:</strong> para cualquier consulta relacionada con la privacidad, escríbenos a info@modelia.es.</p>
+        <p><strong>Contacto:</strong> para cualquier consulta relacionada con la privacidad, escríbenos a info@cardenas-grancanaria.com.</p>
       </div>
       <div class="modal-actions">
         <button class="modal-btn-close" id="modal-privacy-close">Cerrar</button>
@@ -2388,7 +2346,7 @@
         <br>
         <p><strong>Modificaciones:</strong> nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios se comunicarán a través de la plataforma.</p>
         <br>
-        <p><strong>Contacto:</strong> para cualquier consulta, escríbenos a info@modelia.es.</p>
+        <p><strong>Contacto:</strong> para cualquier consulta, escríbenos a info@cardenas-grancanaria.com.</p>
       </div>
       <div class="modal-actions">
         <button class="modal-btn-close" id="modal-terms-close">Cerrar</button>
@@ -2829,12 +2787,6 @@
       var viewDashboardEl  = document.getElementById('view-dashboard');
       var appMainContentEl = document.getElementById('main-content');
       var accountEmailSpan = document.getElementById('account-email');
-      var accountNavItems  = document.querySelectorAll('.account-nav-item');
-      var accountSections  = {
-        general: document.getElementById('account-general'),
-        billing: document.getElementById('account-billing'),
-        usage:   document.getElementById('account-usage')
-      };
 
       function showDashboard() {
         viewAccountEl.classList.remove('visible');
@@ -2860,18 +2812,6 @@
       btnAccount.addEventListener('click', showAccountView);
 
       logoHome.addEventListener('click', showDashboard);
-
-      // Sidebar tab switching
-      accountNavItems.forEach(function(item) {
-        item.addEventListener('click', function() {
-          var tab = item.getAttribute('data-account-tab');
-          accountNavItems.forEach(function(i) { i.classList.remove('active'); });
-          item.classList.add('active');
-          Object.keys(accountSections).forEach(function(key) {
-            accountSections[key].classList.toggle('visible', key === tab);
-          });
-        });
-      });
 
       // ── Drag & drop ─────────────────────────────────────
       dropzone.addEventListener('dragover', function(e) {
