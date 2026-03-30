@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MODELIA — Modelo 211 AEAT</title>
+  <title>CARDENAS — Portal IA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -93,14 +93,50 @@
       opacity: 0.6;
     }
 
-    /* ── Auth view ───────────────────────────────────── */
-    /* Visible by default — no JS needed to show login form */
-    #view-auth {
+    /* ── Loading screen ──────────────────────────────── */
+    #view-loading {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 14px;
+    }
+
+    #view-loading.hidden {
+      display: none;
+    }
+
+    .loading-spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--gray-200);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--gray-600);
+    }
+
+    /* ── Auth view ───────────────────────────────────── */
+    /* Hidden by default — shown by JS after auth check */
+    #view-auth {
+      flex: 1;
+      display: none;
+      align-items: center;
+      justify-content: center;
       padding: 5vh 5vw;
+    }
+
+    #view-auth.visible {
+      display: flex;
     }
 
     #view-auth.hidden {
@@ -805,7 +841,7 @@
     .dashboard-carousel-wrapper {
       position: relative;
       width: 100%;
-      max-width: 820px;
+      max-width: 1100px;
     }
 
     .dashboard-carousel {
@@ -868,8 +904,8 @@
       border-color: var(--blue);
     }
 
-    .carousel-arrow.hidden {
-      opacity: 0;
+    .carousel-arrow.at-edge {
+      opacity: 0.3;
       pointer-events: none;
     }
 
@@ -1627,14 +1663,20 @@
 
   <!-- Header -->
   <div class="header">
-    <span class="logo-text" id="logo-home" style="cursor:pointer;">MODELIA</span>
+    <span class="logo-text" id="logo-home" style="cursor:pointer;">CARDENAS — PORTAL IA</span>
     <div class="header-buttons" id="header-buttons">
       <button class="btn-header" id="btn-contact">Contacto</button>
       <button class="btn-header" id="btn-account">Cuenta</button>
     </div>
   </div>
 
-  <!-- Auth view — visible by default, hidden by JS when logged in -->
+  <!-- Loading screen — visible while checking auth -->
+  <div id="view-loading">
+    <div class="loading-spinner"></div>
+    <span class="loading-text">Cargando...</span>
+  </div>
+
+  <!-- Auth view — hidden by default, shown by JS after auth check -->
   <div id="view-auth">
     <div class="auth-card">
       <h1 class="auth-title">Bienvenido a Modelia</h1>
@@ -1804,10 +1846,11 @@
 
   <!-- Dashboard — model selector shown after login -->
   <div id="view-dashboard">
-    <h1 class="dashboard-title">Selecciona un modelo</h1>
+    <h1 class="dashboard-title">Que quieres hacer hoy?</h1>
+    <p style="text-align:center;color:var(--gray-600);font-size:15px;margin-top:-8px;margin-bottom:8px;">Elige la tarea que necesites completar</p>
     <p class="dashboard-subtitle">Elige el formulario que necesitas rellenar</p>
     <div class="dashboard-carousel-wrapper">
-      <button class="carousel-arrow carousel-arrow-left hidden" id="carousel-left">
+      <button class="carousel-arrow carousel-arrow-left at-edge" id="carousel-left">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 18 9 12 15 6"/>
         </svg>
@@ -2366,6 +2409,7 @@
       var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBudGlwZHNwaWl2ZmZ2eGZ5c2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTg5NzYsImV4cCI6MjA4NzM3NDk3Nn0.2n0YukribUPyIcaWcercFEzpStq-VhQTzFpE69Pnv2M';
 
       // DOM refs — main views
+      var viewLoading    = document.getElementById('view-loading');
       var viewAuth       = document.getElementById('view-auth');
       var viewDashboard  = document.getElementById('view-dashboard');
       var viewAccount    = document.getElementById('view-account');
@@ -2437,7 +2481,8 @@
         }
         _appAlreadyShown = true;
 
-        viewAuth.classList.add('hidden');
+        viewLoading.classList.add('hidden');
+        viewAuth.classList.remove('visible');
         mainContent.classList.remove('visible');
         viewAccount.classList.remove('visible');
         var vc = document.getElementById('view-comprobacion');
@@ -2452,7 +2497,8 @@
 
       function showLogin() {
         _appAlreadyShown = false;
-        viewAuth.classList.remove('hidden');
+        viewLoading.classList.add('hidden');
+        viewAuth.classList.add('visible');
         viewDashboard.classList.remove('visible');
         viewAccount.classList.remove('visible');
         mainContent.classList.remove('visible');
@@ -2727,9 +2773,11 @@
         var session = result.data && result.data.session;
         if (session && session.user) {
           showApp(session.user);
+        } else {
+          showLogin();
         }
       }).catch(function() {
-        // Auth view is already visible — nothing to do
+        showLogin();
       });
 
     })();
@@ -2940,8 +2988,8 @@
         if (!carousel) return;
         var scrollLeft = carousel.scrollLeft;
         var maxScroll  = carousel.scrollWidth - carousel.clientWidth;
-        arrowLeft.classList.toggle('hidden', scrollLeft <= 5);
-        arrowRight.classList.toggle('hidden', scrollLeft >= maxScroll - 5);
+        arrowLeft.classList.toggle('at-edge', scrollLeft <= 5);
+        arrowRight.classList.toggle('at-edge', scrollLeft >= maxScroll - 5);
       }
 
       if (carousel) {
