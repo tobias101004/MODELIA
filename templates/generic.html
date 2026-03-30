@@ -3628,7 +3628,7 @@
           return sb.from('audit_sessions').insert({
             name: defaultName,
             created_by: userId,
-            status: 'not_found',
+            status: 'pending',
             raw_csv_data: parsedRows,
             total_checks: checks.length,
             completed_checks: 0
