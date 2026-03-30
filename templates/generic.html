@@ -2703,8 +2703,13 @@
         });
       });
 
-      // ── Auth state listener — single source of truth for view switching ──
+      // ── Detect recovery flow from URL (works with both PKCE and Implicit) ──
       var _isPasswordRecovery = false;
+      var urlParams = new URLSearchParams(window.location.search);
+      var hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
+      if (urlParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery') {
+        _isPasswordRecovery = true;
+      }
 
       sb.auth.onAuthStateChange(function(event, session) {
         if (event === 'PASSWORD_RECOVERY') {
@@ -2712,8 +2717,11 @@
           showPasswordResetForm();
           return;
         }
-        // If we're in recovery flow, don't let SIGNED_IN redirect to app
-        if (_isPasswordRecovery) return;
+        if (_isPasswordRecovery && session && session.user) {
+          _isPasswordRecovery = false;
+          showPasswordResetForm();
+          return;
+        }
         if (session && session.user) {
           showApp(session.user);
         } else {
@@ -2724,7 +2732,9 @@
       // ── Initial session check ──
       sb.auth.getSession().then(function(result) {
         var session = result.data && result.data.session;
-        if (session && session.user) {
+        if (_isPasswordRecovery && session && session.user) {
+          showPasswordResetForm();
+        } else if (session && session.user) {
           showApp(session.user);
         } else {
           showLogin();
