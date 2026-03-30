@@ -3343,7 +3343,6 @@
 
       // Detail elements
       var detailName      = document.getElementById('audit-detail-name');
-      var detailStatus    = document.getElementById('audit-detail-status');
       var resultSummary   = document.getElementById('audit-result-summary');
       var batchUploadEl   = document.getElementById('audit-batch-upload');
       var checksContainer = document.getElementById('audit-checks-container');
@@ -3802,10 +3801,6 @@
           detailName.title = 'Haz click para editar el nombre';
           detailName.onclick = function() { editSessionName(session); };
 
-          var statusClass = session.status === 'complete' ? 'complete' : 'partial';
-          var statusLabel = statusClass === 'complete' ? 'Completo' : 'En proceso';
-          detailStatus.className = 'audit-status-badge ' + statusClass;
-          detailStatus.textContent = statusLabel;
 
           // ── Result summary ──
           var counts = computeStatusCounts(checks);
