@@ -62,8 +62,19 @@ EXTRACT_HOJA = {
                 "client_name": {
                     "type": "string",
                     "description": (
-                        "Client/customer name. Found as 'Nombre Cliente', "
-                        "'Client\\'s Name', 'Name des Kunden'."
+                        "Client/customer name — this is the person who visited the property "
+                        "(the potential buyer or searcher), NOT the property owner or agent. "
+                        "Look for 'Nombre Cliente', 'Client\\'s Name', 'Name des Kunden' in "
+                        "the client info table near the top of the document. "
+                        "IMPORTANT: The document title/header may contain a format like "
+                        "'DEMANDA / REF-CODE (PropertyName) / ClientName / DemandNumber' or "
+                        "the description may say 'Visita a la Ref: XXXXX-CA (PropertyName) "
+                        "por el cliente NNNNN (ClientName)'. In this pattern, the name in "
+                        "parentheses AFTER 'por el cliente NNNNN' is the CLIENT name — "
+                        "the name in parentheses after the REF code is the PROPERTY name, "
+                        "not the client. Always prefer the name from the 'Nombre Cliente' "
+                        "field in the client info table if visible. Return ONLY the client's "
+                        "first name or full name as written, without ID numbers."
                     ),
                 },
                 "demand_number": {
@@ -141,7 +152,19 @@ Just return the number.
 8. For property price: extract the price value.
 9. For client signature: check if there is a visible handwritten signature \
 in the client signature area at the bottom of the document.
-10. If a field is not found, return an empty string (or false for signature)."""
+10. If a field is not found, return an empty string (or false for signature).
+
+CRITICAL — CLIENT NAME EXTRACTION:
+The client name is the person who visited the property (the potential buyer/searcher). \
+It is NOT the property name or the agent name. \
+Look for the 'Nombre Cliente' / 'Client's Name' / 'Name des Kunden' field in the \
+client info table near the top of the document. \
+BE CAREFUL: The document title or description may follow a pattern like: \
+'Visita a la Ref: 06055-CA (Christopher) por el cliente 13059 (Samara)'. \
+In this format, 'Christopher' is the PROPERTY reference name (NOT the client), \
+and 'Samara' is the CLIENT name (the name in parentheses after the client ID number). \
+Always prioritize the name written in the 'Nombre Cliente' field of the client info table. \
+Return only the client's name, without any ID numbers or reference codes."""
 
 
 # ── PDF to images ───────────────────────────────────────────────────────────
