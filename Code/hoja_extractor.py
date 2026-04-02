@@ -328,19 +328,19 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
         if agent_match:
             weighted_score += 2
 
-    # Nombre cliente (weight: 2)
+    # Nombre cliente (weight: 3) — uses flexible matching (nicknames, partial, etc.)
     ext_client = (extracted.get("client_name") or "").strip()
     exp_client = (expected.get("nombre_cliente") or "").strip()
     if exp_client:
-        client_match = _fuzzy_name_match(ext_client, exp_client)
+        client_match = _flexible_client_name_match(ext_client, exp_client)
         results["nombre_cliente"] = {
             "expected": exp_client,
             "found": ext_client,
             "match": client_match,
         }
-        max_possible_score += 2
+        max_possible_score += 3
         if client_match:
-            weighted_score += 2
+            weighted_score += 3
 
     # Visit date ±7 days (weight: 2)
     ext_date_raw = (extracted.get("visit_date") or "").strip()
@@ -409,20 +409,27 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
     }
 
     # ── Determine overall match ────────────────────────────────────────
-    # Rule: a visit is VERIFIED if both ref_propiedad AND num_demanda match.
-    # These two fields uniquely identify a visit. All other fields are
-    # informational — they are displayed in the UI but do NOT affect
-    # the verified/not-verified status.
+    # Rule: a visit is VERIFIED if:
+    #   nombre_cliente matches (flexible) AND (ref_propiedad OR num_demanda matches)
+    #
+    # The client name uses very flexible matching: partial names, nicknames,
+    # with/without surnames, OCR typos, etc. It must always be present.
+    # Then at least ONE of the two identifiers (ref or demand) must also match.
+    #
+    # All other fields (agent, date, type, address, price, signature) are
+    # informational — displayed in the UI but do NOT affect the status.
+    client_matched = results.get("nombre_cliente", {}).get("match", False)
     ref_matched = results.get("ref_propiedad", {}).get("match", False)
     demand_matched = results.get("solicitud_demanda", {}).get("match", False)
 
-    if ref_matched and demand_matched:
+    if client_matched and (ref_matched or demand_matched):
+        # Client name matches + at least one identifier — verified
         overall_match = True
-    elif demand_matched and not exp_ref:
-        # Demand matched and there was no ref to compare — accept
+    elif not exp_client and (ref_matched and demand_matched):
+        # No client name to compare but both identifiers match — verified
         overall_match = True
-    elif ref_matched and not exp_demand:
-        # Ref matched and there was no demand to compare — accept
+    elif client_matched and not exp_ref and not exp_demand:
+        # Client matched but no identifiers available to compare — accept
         overall_match = True
     else:
         overall_match = False
@@ -595,6 +602,97 @@ def _fuzzy_name_match(a: str, b: str) -> bool:
     words_b = set(lb.split())
     overlap = words_a & words_b
     return len(overlap) >= min(len(words_a), len(words_b)) * 0.5
+
+
+def _flexible_client_name_match(extracted_name: str, expected_name: str) -> bool:
+    """Very flexible client name matching for audit verification.
+
+    The extracted name comes from AI reading a scanned visit sheet, and the
+    expected name comes from the CRM CSV. These can differ significantly:
+    - Different order: "Garcia Lopez Maria" vs "Maria Garcia"
+    - With/without surname: "Samara" vs "Samara Rodriguez"
+    - Nicknames or abbreviations: "Paco" vs "Francisco"
+    - Partial names: "M. Garcia" vs "Maria Garcia Lopez"
+    - Extra words: "Sr. Martinez" vs "Martinez"
+    - Typos from OCR: "Martínez" vs "Martinez"
+
+    Returns True if there is reasonable evidence both names refer to the
+    same person. Errs on the side of matching (permissive).
+    """
+    a = _strip_accents(extracted_name.strip().lower())
+    b = _strip_accents(expected_name.strip().lower())
+    if not a or not b:
+        return False
+
+    # Remove common prefixes/suffixes that aren't part of the name
+    for prefix in ("sr.", "sra.", "sr ", "sra ", "don ", "doña ", "dona ",
+                   "mr.", "mrs.", "ms.", "mr ", "mrs ", "ms ",
+                   "herr ", "frau "):
+        a = a.replace(prefix, "")
+        b = b.replace(prefix, "")
+    a = a.strip()
+    b = b.strip()
+
+    if not a or not b:
+        return False
+
+    # Exact match after normalization
+    if a == b:
+        return True
+
+    # Direct substring — one name contained in the other
+    if a in b or b in a:
+        return True
+
+    # Word-based matching: ANY shared word is enough
+    # (e.g., "Samara" matches "Samara Rodriguez Torres")
+    words_a = set(w for w in a.split() if len(w) > 1)
+    words_b = set(w for w in b.split() if len(w) > 1)
+
+    if not words_a or not words_b:
+        return False
+
+    overlap = words_a & words_b
+    if overlap:
+        return True
+
+    # Check if any word from one set is a substring of any word in the other
+    # Catches: "Fran" in "Francisco", "Alex" in "Alexander", etc.
+    for wa in words_a:
+        for wb in words_b:
+            if len(wa) >= 3 and len(wb) >= 3:
+                if wa in wb or wb in wa:
+                    return True
+
+    # Levenshtein-like: if the shorter name is very close to part of the longer
+    # (catches OCR typos: "Martimez" vs "Martinez")
+    shorter, longer = (a, b) if len(a) <= len(b) else (b, a)
+    if len(shorter) >= 3:
+        # Check if any word in the longer name is close to any word in shorter
+        for ws in shorter.split():
+            if len(ws) < 3:
+                continue
+            for wl in longer.split():
+                if len(wl) < 3:
+                    continue
+                if _simple_similarity(ws, wl) >= 0.75:
+                    return True
+
+    return False
+
+
+def _simple_similarity(a: str, b: str) -> float:
+    """Simple character-overlap similarity ratio between two strings."""
+    if not a or not b:
+        return 0.0
+    # Bigram similarity (Dice coefficient)
+    def bigrams(s):
+        return set(s[i:i+2] for i in range(len(s) - 1))
+    ba = bigrams(a)
+    bb = bigrams(b)
+    if not ba or not bb:
+        return 1.0 if a == b else 0.0
+    return 2.0 * len(ba & bb) / (len(ba) + len(bb))
 
 
 def _parse_date(date_str: str):
