@@ -4040,10 +4040,18 @@
           return html;
         }
 
+        var isIdentified = verData && verData.identified;
+
         if (check.status === 'verified') {
-          statusIcon = '<span class="audit-check-status verified">&#10003; Verificacion automatica ok</span>';
+          statusIcon = '<span class="audit-check-status verified">&#10003; Verificada — todos los campos correctos</span>';
           if (verData && verData.fields) {
             statusIcon += buildVerificationDetails(verData, '#f0fdf4', '#bbf7d0', '#15803d', 'Detalles verificacion');
+          }
+          actionsHtml = '';
+        } else if (check.status === 'incomplete' && isIdentified) {
+          statusIcon = '<span class="audit-check-status incomplete">&#10003; Visita encontrada — algunos campos pendientes</span>';
+          if (verData && verData.fields) {
+            statusIcon += buildVerificationDetails(verData, '#fffbeb', '#fde68a', '#b45309', 'Ref y demanda coinciden. Campos con incidencias:');
           }
           actionsHtml = '';
         } else if (check.status === 'incomplete') {
@@ -4261,15 +4269,7 @@
               console.log('[AUDIT] Match results:', results);
             }
 
-            // Count matches — a result with match=true OR score > 0 counts
-            Object.keys(results).forEach(function(checkId) {
-              var result = results[checkId];
-              if (result && result.match) {
-                matchCount++;
-              }
-            });
-
-            // Update checks based on results
+            // Update checks based on results (matchCount tallied inside loop)
             checksArr.forEach(function(checkItem) {
               var checkId = checkItem.id;
               var result = results[checkId];
@@ -4279,29 +4279,35 @@
               var userNote = (existingNotes && existingNotes.user_note) ? existingNotes.user_note : undefined;
               var update;
 
-              if (result && result.match) {
+              if (result && result.identified) {
+                // Visit identified (ref+demand match)
+                var isFullyVerified = result.match; // all fields ok too
                 var notesObj = {
-                  auto_verified: true,
+                  auto_verified: isFullyVerified,
+                  identified: true,
                   fields: result.fields,
                   extracted: result.extracted,
                   page: result.page
                 };
                 if (userNote) notesObj.user_note = userNote;
                 update = sb.from('audit_checks').update({
-                  status: 'verified',
+                  status: isFullyVerified ? 'verified' : 'incomplete',
                   verified_at: new Date().toISOString(),
                   notes: JSON.stringify(notesObj)
                 }).eq('id', checkId);
-              } else if (result && !result.match) {
+                matchCount++;
+              } else if (result && !result.identified) {
+                // Page found with some data but ref+demand didn't match
                 var notesObj2 = {
                   auto_verified: false,
+                  identified: false,
                   fields: result.fields,
                   extracted: result.extracted,
                   page: result.page
                 };
                 if (userNote) notesObj2.user_note = userNote;
                 update = sb.from('audit_checks').update({
-                  status: 'incomplete',
+                  status: 'not_found',
                   notes: JSON.stringify(notesObj2)
                 }).eq('id', checkId);
               }

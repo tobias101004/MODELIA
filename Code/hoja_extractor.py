@@ -328,7 +328,7 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
         if agent_match:
             weighted_score += 2
 
-    # Nombre cliente (weight: 3) — uses flexible matching (nicknames, partial, etc.)
+    # Nombre cliente (weight: 2) — uses flexible matching (nicknames, partial, etc.)
     ext_client = (extracted.get("client_name") or "").strip()
     exp_client = (expected.get("nombre_cliente") or "").strip()
     if exp_client:
@@ -338,9 +338,9 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": ext_client,
             "match": client_match,
         }
-        max_possible_score += 3
+        max_possible_score += 2
         if client_match:
-            weighted_score += 3
+            weighted_score += 2
 
     # Visit date ±7 days (weight: 2)
     ext_date_raw = (extracted.get("visit_date") or "").strip()
@@ -409,33 +409,39 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
     }
 
     # ── Determine overall match ────────────────────────────────────────
-    # Rule: a visit is VERIFIED if:
-    #   nombre_cliente matches (flexible) AND (ref_propiedad OR num_demanda matches)
+    # Two-level result:
     #
-    # The client name uses very flexible matching: partial names, nicknames,
-    # with/without surnames, OCR typos, etc. It must always be present.
-    # Then at least ONE of the two identifiers (ref or demand) must also match.
+    # IDENTIFICATION: ref_propiedad + num_demanda both match.
+    #   → This confirms it IS the visit we're looking for.
     #
-    # All other fields (agent, date, type, address, price, signature) are
-    # informational — displayed in the UI but do NOT affect the status.
-    client_matched = results.get("nombre_cliente", {}).get("match", False)
+    # VERIFICATION: ALL other fields also match (agent, client, date,
+    #   type, address, price, signature).
+    #   → "verified" = identified AND everything checks out.
+    #   → "incomplete" = identified BUT some fields are missing/wrong.
+    #   → "not_found" = could not even identify the visit in the document.
+    #
+    # The frontend uses `identified` to decide if the visit was found,
+    # and `match` (all fields ok) to decide verified vs incomplete.
     ref_matched = results.get("ref_propiedad", {}).get("match", False)
     demand_matched = results.get("solicitud_demanda", {}).get("match", False)
 
-    if client_matched and (ref_matched or demand_matched):
-        # Client name matches + at least one identifier — verified
-        overall_match = True
-    elif not exp_client and (ref_matched and demand_matched):
-        # No client name to compare but both identifiers match — verified
-        overall_match = True
-    elif client_matched and not exp_ref and not exp_demand:
-        # Client matched but no identifiers available to compare — accept
-        overall_match = True
+    # Identification: ref + demand (or just one if the other wasn't available)
+    if ref_matched and demand_matched:
+        identified = True
+    elif demand_matched and not exp_ref:
+        identified = True
+    elif ref_matched and not exp_demand:
+        identified = True
     else:
-        overall_match = False
+        identified = False
+
+    # Full verification: identified AND every compared field matches
+    all_fields_ok = all(f["match"] for f in results.values())
+    overall_match = identified and all_fields_ok
 
     return {
-        "match": overall_match,
+        "match": overall_match,         # True = fully verified (all fields ok)
+        "identified": identified,       # True = ref+demand confirmed this is the visit
         "score": weighted_score,
         "max_score": max_possible_score,
         "fields": results,
@@ -532,8 +538,11 @@ def emparejar_hojas(extractions: list[dict], checks: list[dict]) -> dict:
                 "result": ver,
             })
 
-    # Sort by: match first (True > False), then score descending
-    score_matrix.sort(key=lambda x: (x["match"], x["score"]), reverse=True)
+    # Sort by: identified first, then match (all fields), then score
+    score_matrix.sort(
+        key=lambda x: (x["result"]["identified"], x["match"], x["score"]),
+        reverse=True,
+    )
 
     results = {}
     used_checks = set()
