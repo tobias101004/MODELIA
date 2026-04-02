@@ -409,23 +409,20 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
     }
 
     # ── Determine overall match ────────────────────────────────────────
-    # Match if: demand_number matches (unique per visit/client, strongest ID)
-    # OR property_ref matches + supporting evidence (score >= 4)
-    # OR enough weighted evidence overall (score >= 5)
+    # Rule: a visit is VERIFIED if both ref_propiedad AND num_demanda match.
+    # These two fields uniquely identify a visit. All other fields are
+    # informational — they are displayed in the UI but do NOT affect
+    # the verified/not-verified status.
     ref_matched = results.get("ref_propiedad", {}).get("match", False)
     demand_matched = results.get("solicitud_demanda", {}).get("match", False)
 
-    if max_possible_score == 0:
-        # No fields to compare — can't determine match
-        overall_match = False
-    elif demand_matched:
-        # Demand number is unique per visit — if it matches, it's a match
+    if ref_matched and demand_matched:
         overall_match = True
-    elif ref_matched and weighted_score >= 4:
-        # Property ref matched + supporting evidence
+    elif demand_matched and not exp_ref:
+        # Demand matched and there was no ref to compare — accept
         overall_match = True
-    elif weighted_score >= 5 and max_possible_score > 0:
-        # Strong weighted evidence even without primary identifiers
+    elif ref_matched and not exp_demand:
+        # Ref matched and there was no demand to compare — accept
         overall_match = True
     else:
         overall_match = False
@@ -528,8 +525,8 @@ def emparejar_hojas(extractions: list[dict], checks: list[dict]) -> dict:
                 "result": ver,
             })
 
-    # Sort by score descending — best matches first
-    score_matrix.sort(key=lambda x: x["score"], reverse=True)
+    # Sort by: match first (True > False), then score descending
+    score_matrix.sort(key=lambda x: (x["match"], x["score"]), reverse=True)
 
     results = {}
     used_checks = set()

@@ -3487,6 +3487,24 @@
         return '';
       }
 
+      // ── Extract client name from Asunto field ──
+      // Pattern: "Visita a la Ref: 06055-CA (Christopher) por el cliente 13059 (Samara)"
+      // Client name is the name in parentheses AFTER "por el cliente NNNNN"
+      function extractClientNameFromAsunto(asunto) {
+        if (!asunto) return '';
+        // Try: "por el cliente NNNNN (Name)" or "por el cliente NNNNN(Name)"
+        var m = asunto.match(/por\s+el\s+cliente\s+\d+\s*\(([^)]+)\)/i);
+        if (m) return m[1].trim();
+        // Try: last parenthesized name in the string
+        var allParens = asunto.match(/\(([^)]+)\)/g);
+        if (allParens && allParens.length >= 2) {
+          // Last parenthesized group is usually the client name
+          var last = allParens[allParens.length - 1];
+          return last.replace(/[()]/g, '').trim();
+        }
+        return '';
+      }
+
       function selectRandomChecks(rows) {
         // Filter out cancelled visits
         var valid = rows.filter(function(r) {
@@ -3509,6 +3527,11 @@
           var shuffled = agentVisits.slice().sort(function() { return Math.random() - 0.5; });
           var selected = shuffled.slice(0, 2);
           selected.forEach(function(r) {
+            var clientName = csvCol(r, ['Nombre Cliente', 'Cliente', 'Nombre']);
+            // If no dedicated column, extract from Asunto
+            if (!clientName) {
+              clientName = extractClientNameFromAsunto(r['Asunto'] || '');
+            }
             picks.push({
               comercial: r['Comercial'] || 'Sin asignar',
               ref_propiedad: r['Ref'] || '',
@@ -3516,7 +3539,7 @@
               fecha_visita: r['Fecha Alta'] || '',
               id_seguimiento: r['ID Seguimiento'] || '',
               asunto: r['Asunto'] || '',
-              nombre_cliente: csvCol(r, ['Nombre Cliente', 'Cliente', 'Nombre']),
+              nombre_cliente: clientName,
               tipo_propiedad: csvCol(r, ['Tipo Propiedad', 'Tipo propiedad', 'Tipo']),
               direccion_propiedad: csvCol(r, ['Direccion', 'Dirección', 'Direccion Propiedad', 'Dirección Propiedad']),
               precio_propiedad: csvCol(r, ['Precio', 'Precio Propiedad', 'Precio propiedad'])
@@ -4147,12 +4170,54 @@
         });
       }
 
+      // ── Progress messages for batch upload ──
+      var PROGRESS_STEPS = [
+        { text: 'Subiendo documento...', pct: 5 },
+        { text: 'Convirtiendo paginas del PDF a imagenes...', pct: 15 },
+        { text: 'Analizando pagina a pagina con IA...', pct: 25 },
+        { text: 'Extrayendo datos de las hojas de visita...', pct: 40 },
+        { text: 'Identificando asesores y referencias...', pct: 55 },
+        { text: 'Comparando con las visitas auditadas...', pct: 70 },
+        { text: 'Verificando coincidencias de referencias y demandas...', pct: 82 },
+        { text: 'Preparando resultados...', pct: 92 },
+      ];
+
+      function showProgressUI(container) {
+        container.innerHTML =
+          '<div style="padding:16px 20px;background:white;border:1px solid var(--gray-200);border-radius:10px;">' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+              '<div class="loading-spinner" style="width:18px;height:18px;border-width:2px;"></div>' +
+              '<span id="audit-progress-text" style="font-size:13px;font-weight:600;color:var(--blue);">Preparando analisis...</span>' +
+            '</div>' +
+            '<div style="width:100%;height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden;">' +
+              '<div id="audit-progress-bar" style="width:0%;height:100%;background:var(--blue);border-radius:3px;transition:width 0.5s ease;"></div>' +
+            '</div>' +
+          '</div>';
+
+        var stepIdx = 0;
+        var progressInterval = setInterval(function() {
+          if (stepIdx >= PROGRESS_STEPS.length) {
+            clearInterval(progressInterval);
+            return;
+          }
+          var step = PROGRESS_STEPS[stepIdx];
+          var textEl = document.getElementById('audit-progress-text');
+          var barEl = document.getElementById('audit-progress-bar');
+          if (textEl) textEl.textContent = step.text;
+          if (barEl) barEl.style.width = step.pct + '%';
+          stepIdx++;
+        }, 4000);
+
+        return progressInterval;
+      }
+
       // ── Handle batch PDF upload ──
       function handleBatchUpload(file) {
         var dz = document.getElementById('audit-batch-dz');
         var statusEl = document.getElementById('audit-batch-status');
+        var progressInterval = null;
         if (dz) {
-          dz.innerHTML = '<div style="color:var(--blue);font-weight:600;">&#8987; Verificando hojas de visita con IA... Esto puede tardar unos minutos.</div>';
+          progressInterval = showProgressUI(dz);
         }
 
         var docName = 'doc_' + Date.now() + '.pdf';
@@ -4288,11 +4353,19 @@
               }
             }
 
+            if (progressInterval) clearInterval(progressInterval);
+            // Set progress to 100%
+            var barEl = document.getElementById('audit-progress-bar');
+            var textEl = document.getElementById('audit-progress-text');
+            if (barEl) barEl.style.width = '100%';
+            if (textEl) textEl.textContent = 'Analisis completado';
+
             updateSessionStatus(currentSessionId);
             // Reload detail to refresh all UI
             setTimeout(function() { loadSessionDetail(currentSessionId); }, 2000);
           })
           .catch(function(err) {
+            if (progressInterval) clearInterval(progressInterval);
             console.error('Batch verification error:', err);
             alert('Error al verificar las hojas: ' + (err.message || err));
             loadSessionDetail(currentSessionId);
