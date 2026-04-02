@@ -265,10 +265,29 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
 
     # ── Identity fields (high weight) ──────────────────────────────────
 
-    # Property REF — strongest identifier (weight: 5)
+    # Nº solicitud/demanda — strongest identifier, unique per visit/client (weight: 6)
+    ext_demand = re.sub(r"[^\d]", "", extracted.get("demand_number") or "")
+    exp_demand = re.sub(r"[^\d]", "", expected.get("num_demanda") or "")
+    if exp_demand:
+        demand_match = bool(
+            ext_demand and exp_demand and (
+                ext_demand == exp_demand
+                or ext_demand in exp_demand
+                or exp_demand in ext_demand
+            )
+        )
+        results["solicitud_demanda"] = {
+            "expected": expected.get("num_demanda", ""),
+            "found": extracted.get("demand_number", ""),
+            "match": demand_match,
+        }
+        max_possible_score += 6
+        if demand_match:
+            weighted_score += 6
+
+    # Property REF — supporting identifier, can repeat across visits (weight: 3)
     ext_ref = (extracted.get("property_ref") or "").strip().upper().replace(" ", "")
     exp_ref = (expected.get("ref_propiedad") or "").strip().upper().replace(" ", "")
-    # Also try to extract ref digits for loose matching
     ext_ref_digits = re.sub(r"[^\d]", "", ext_ref)
     exp_ref_digits = re.sub(r"[^\d]", "", exp_ref)
     if exp_ref:
@@ -289,29 +308,9 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": extracted.get("property_ref", ""),
             "match": ref_match,
         }
-        max_possible_score += 5
+        max_possible_score += 3
         if ref_match:
-            weighted_score += 5
-
-    # Nº solicitud/demanda (weight: 4)
-    ext_demand = re.sub(r"[^\d]", "", extracted.get("demand_number") or "")
-    exp_demand = re.sub(r"[^\d]", "", expected.get("num_demanda") or "")
-    if exp_demand:
-        demand_match = bool(
-            ext_demand and exp_demand and (
-                ext_demand == exp_demand
-                or ext_demand in exp_demand
-                or exp_demand in ext_demand
-            )
-        )
-        results["solicitud_demanda"] = {
-            "expected": expected.get("num_demanda", ""),
-            "found": extracted.get("demand_number", ""),
-            "match": demand_match,
-        }
-        max_possible_score += 4
-        if demand_match:
-            weighted_score += 4
+            weighted_score += 3
 
     # ── Supporting fields (medium weight) ──────────────────────────────
 
@@ -410,23 +409,23 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
     }
 
     # ── Determine overall match ────────────────────────────────────────
-    # Match if: property_ref matches (strongest identifier)
-    # OR weighted score >= 4 (enough supporting evidence)
-    # OR score is >= 50% of max possible
+    # Match if: demand_number matches (unique per visit/client, strongest ID)
+    # OR property_ref matches + supporting evidence (score >= 4)
+    # OR enough weighted evidence overall (score >= 5)
     ref_matched = results.get("ref_propiedad", {}).get("match", False)
     demand_matched = results.get("solicitud_demanda", {}).get("match", False)
 
     if max_possible_score == 0:
         # No fields to compare — can't determine match
         overall_match = False
-    elif ref_matched:
-        # Property ref is the strongest identifier — if it matches, it's a match
+    elif demand_matched:
+        # Demand number is unique per visit — if it matches, it's a match
         overall_match = True
-    elif demand_matched and weighted_score >= 4:
-        # Demand number matched + some supporting evidence
+    elif ref_matched and weighted_score >= 4:
+        # Property ref matched + supporting evidence
         overall_match = True
-    elif weighted_score >= 4 and max_possible_score > 0:
-        # Enough weighted evidence even without primary identifiers
+    elif weighted_score >= 5 and max_possible_score > 0:
+        # Strong weighted evidence even without primary identifiers
         overall_match = True
     else:
         overall_match = False
