@@ -2445,6 +2445,19 @@
 
       window._supabase = sb;
 
+      // ── Ensure storage bucket exists ──
+      sb.storage.getBucket('hojas-visita').then(function(res) {
+        if (res.error && res.error.message && res.error.message.indexOf('not found') !== -1) {
+          sb.storage.createBucket('hojas-visita', { public: false }).then(function(createRes) {
+            if (createRes.error) {
+              console.warn('[STORAGE] Could not create bucket hojas-visita:', createRes.error.message);
+            } else {
+              console.log('[STORAGE] Bucket hojas-visita created successfully');
+            }
+          });
+        }
+      });
+
       // ── Helper: clear all auth messages ──
       function clearMessages() {
         authError.classList.remove('visible');
@@ -3857,7 +3870,7 @@
 
           var session = sessionRes.data;
           var checks = checksRes.data || [];
-          var uploadedFiles = (storageRes.data || []).filter(function(f) {
+          var uploadedFiles = (storageRes.error ? [] : (storageRes.data || [])).filter(function(f) {
             return f.name.toLowerCase().endsWith('.pdf');
           });
 
@@ -3878,12 +3891,11 @@
             docsHtml += '<div style="font-weight:600;color:var(--blue);margin-bottom:8px;font-size:13px;">Documentos subidos (' + uploadedFiles.length + ')</div>';
             uploadedFiles.forEach(function(f, idx) {
               var filePath = sessionId + '/' + f.name;
-              var publicUrl = sb.storage.from('hojas-visita').getPublicUrl(filePath).data.publicUrl;
               docsHtml += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
               docsHtml += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--blue);flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
               docsHtml += '<span style="font-size:12px;color:var(--gray-700);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(f.name) + '</span>';
               docsHtml += '<button class="audit-btn-secondary audit-download-doc-btn" data-path="' + esc(filePath) + '" data-name="' + esc(f.name) + '" style="font-size:11px;padding:2px 10px;">Descargar</button>';
-              docsHtml += '<button class="audit-btn-secondary audit-view-doc-btn" data-url="' + esc(publicUrl) + '" style="font-size:11px;padding:2px 10px;">Ver</button>';
+              docsHtml += '<button class="audit-btn-secondary audit-view-doc-btn" data-path="' + esc(filePath) + '" style="font-size:11px;padding:2px 10px;">Ver</button>';
               docsHtml += '</div>';
             });
             docsHtml += '</div>';
@@ -3919,7 +3931,23 @@
           resultSummary.querySelectorAll('.audit-view-doc-btn').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
               e.stopPropagation();
-              window.open(btn.getAttribute('data-url'), '_blank');
+              var path = btn.getAttribute('data-path');
+              // Use signed URL (works for both public and private buckets)
+              sb.storage.from('hojas-visita').createSignedUrl(path, 3600)
+                .then(function(res) {
+                  if (res.error) throw res.error;
+                  window.open(res.data.signedUrl, '_blank');
+                })
+                .catch(function(err) {
+                  // Fallback: download and open as blob
+                  sb.storage.from('hojas-visita').download(path).then(function(dlRes) {
+                    if (dlRes.error) throw dlRes.error;
+                    var url = URL.createObjectURL(dlRes.data);
+                    window.open(url, '_blank');
+                  }).catch(function(dlErr) {
+                    alert('Error al abrir el documento: ' + (dlErr.message || dlErr));
+                  });
+                });
             });
           });
 
@@ -4161,10 +4189,17 @@
             var results = data.results || {};
             var updates = [];
 
-            // Count matches
+            // Log extractions for debugging
+            if (data.extractions_debug) {
+              console.log('[AUDIT] Extractions from PDF:', data.extractions_debug);
+              console.log('[AUDIT] Checks sent:', checksArr);
+              console.log('[AUDIT] Match results:', results);
+            }
+
+            // Count matches — a result with match=true OR score > 0 counts
             Object.keys(results).forEach(function(checkId) {
               var result = results[checkId];
-              if (result && (result.match || Object.keys(result.fields || {}).some(function(k) { return result.fields[k].match; }))) {
+              if (result && result.match) {
                 matchCount++;
               }
             });
@@ -4225,8 +4260,30 @@
                   '&#10003; Se encontraron ' + matchCount + ' hoja(s) de visita de las auditadas en este documento.' +
                 '</div>';
               } else {
+                var debugHtml = '';
+                if (data.extractions_debug && data.extractions_debug.length > 0) {
+                  debugHtml = '<div style="margin-top:8px;font-size:11px;font-weight:400;color:#7f1d1d;">' +
+                    '<div style="font-weight:600;margin-bottom:4px;">Datos extraidos del PDF (' + data.extractions_debug.length + ' paginas):</div>';
+                  data.extractions_debug.forEach(function(ext) {
+                    debugHtml += '<div>Pag ' + ext.page + ': Ref=' + (ext.property_ref || '?') +
+                      ', Agente=' + (ext.agent_name || '?') +
+                      ', Cliente=' + (ext.client_name || '?') +
+                      ', Demanda=' + (ext.demand_number || '?') +
+                      ', Fecha=' + (ext.visit_date || '?') + '</div>';
+                  });
+                  debugHtml += '<div style="font-weight:600;margin-top:6px;margin-bottom:4px;">Visitas esperadas:</div>';
+                  checksArr.forEach(function(c) {
+                    debugHtml += '<div>Ref=' + (c.ref_propiedad || '?') +
+                      ', Agente=' + (c.comercial || '?') +
+                      ', Cliente=' + (c.nombre_cliente || '?') +
+                      ', Demanda=' + (c.num_demanda || '?') +
+                      ', Fecha=' + (c.fecha_visita || '?') + '</div>';
+                  });
+                  debugHtml += '</div>';
+                }
                 statusEl.innerHTML = '<div style="padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:13px;font-weight:600;">' +
-                  '&#10007; No se encontro ninguna hoja de visita de las auditadas en este documento. El documento no se ha guardado.' +
+                  '&#10007; No se encontro ninguna coincidencia entre las hojas del documento y las visitas auditadas. El documento no se ha guardado.' +
+                  debugHtml +
                 '</div>';
               }
             }

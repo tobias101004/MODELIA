@@ -291,6 +291,28 @@ def verify_hojas_batch():
         # Extract data from each page independently
         extractions = extraer_datos_hoja_por_pagina(Path(tmp.name), api_key)
 
+        logging.info(f"[AUDIT] Extracted {len(extractions)} pages with data from PDF")
+        for i, ext in enumerate(extractions):
+            logging.info(
+                f"[AUDIT]   Page {ext.get('_page', '?')}: "
+                f"ref={ext.get('property_ref', '')}, "
+                f"agent={ext.get('agent_name', '')}, "
+                f"client={ext.get('client_name', '')}, "
+                f"demand={ext.get('demand_number', '')}, "
+                f"date={ext.get('visit_date', '')}"
+            )
+
+        logging.info(f"[AUDIT] Matching against {len(checks)} checks")
+        for c in checks:
+            logging.info(
+                f"[AUDIT]   Check {c.get('id', '?')}: "
+                f"ref={c.get('ref_propiedad', '')}, "
+                f"agent={c.get('comercial', '')}, "
+                f"client={c.get('nombre_cliente', '')}, "
+                f"demand={c.get('num_demanda', '')}, "
+                f"date={c.get('fecha_visita', '')}"
+            )
+
         # Match extractions to expected checks
         results = emparejar_hojas(extractions, checks)
 
@@ -298,6 +320,17 @@ def verify_hojas_batch():
             "ok": True,
             "results": results,
             "total_pages": len(extractions),
+            "extractions_debug": [
+                {
+                    "page": ext.get("_page"),
+                    "property_ref": ext.get("property_ref", ""),
+                    "agent_name": ext.get("agent_name", ""),
+                    "client_name": ext.get("client_name", ""),
+                    "demand_number": ext.get("demand_number", ""),
+                    "visit_date": ext.get("visit_date", ""),
+                }
+                for ext in extractions
+            ],
         })
 
     except Exception as exc:

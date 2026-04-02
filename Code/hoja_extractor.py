@@ -242,6 +242,11 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
     """
     Compare extracted hoja data against expected visit data from CSV.
 
+    Uses weighted scoring to determine if an extraction matches a check.
+    Identity fields (property_ref, demand_number) are weighted heavily.
+    Secondary fields (agent, client, date, etc.) provide supporting evidence.
+    Signature is a quality indicator, not a matching criterion.
+
     Args:
         extracted: dict from GPT-4o (agent_name, property_ref, visit_date,
                    client_name, demand_number, property_type, property_address,
@@ -251,13 +256,66 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
                    tipo_propiedad, direccion_propiedad, precio_propiedad)
 
     Returns:
-        dict with ``match`` bool, per-field ``fields`` results, and raw
-        ``extracted`` data.
+        dict with ``match`` bool, ``score`` int, per-field ``fields`` results,
+        and raw ``extracted`` data.
     """
     results = {}
-    overall_match = True
+    weighted_score = 0
+    max_possible_score = 0
 
-    # ── Asesor (agent) ──────────────────────────────────────────────────
+    # ── Identity fields (high weight) ──────────────────────────────────
+
+    # Property REF — strongest identifier (weight: 5)
+    ext_ref = (extracted.get("property_ref") or "").strip().upper().replace(" ", "")
+    exp_ref = (expected.get("ref_propiedad") or "").strip().upper().replace(" ", "")
+    # Also try to extract ref digits for loose matching
+    ext_ref_digits = re.sub(r"[^\d]", "", ext_ref)
+    exp_ref_digits = re.sub(r"[^\d]", "", exp_ref)
+    if exp_ref:
+        ref_match = (
+            ext_ref == exp_ref
+            or ext_ref.startswith(exp_ref)
+            or exp_ref.startswith(ext_ref)
+            or exp_ref in ext_ref
+            or ext_ref in exp_ref
+            # Loose digit-only match (e.g., "06055" vs "06055-CA")
+            or (ext_ref_digits and exp_ref_digits and
+                (ext_ref_digits == exp_ref_digits
+                 or ext_ref_digits.startswith(exp_ref_digits)
+                 or exp_ref_digits.startswith(ext_ref_digits)))
+        )
+        results["ref_propiedad"] = {
+            "expected": expected.get("ref_propiedad", ""),
+            "found": extracted.get("property_ref", ""),
+            "match": ref_match,
+        }
+        max_possible_score += 5
+        if ref_match:
+            weighted_score += 5
+
+    # Nº solicitud/demanda (weight: 4)
+    ext_demand = re.sub(r"[^\d]", "", extracted.get("demand_number") or "")
+    exp_demand = re.sub(r"[^\d]", "", expected.get("num_demanda") or "")
+    if exp_demand:
+        demand_match = bool(
+            ext_demand and exp_demand and (
+                ext_demand == exp_demand
+                or ext_demand in exp_demand
+                or exp_demand in ext_demand
+            )
+        )
+        results["solicitud_demanda"] = {
+            "expected": expected.get("num_demanda", ""),
+            "found": extracted.get("demand_number", ""),
+            "match": demand_match,
+        }
+        max_possible_score += 4
+        if demand_match:
+            weighted_score += 4
+
+    # ── Supporting fields (medium weight) ──────────────────────────────
+
+    # Asesor / agent (weight: 2)
     ext_agent = (extracted.get("agent_name") or "").strip()
     exp_agent = (expected.get("comercial") or "").strip()
     if exp_agent:
@@ -267,10 +325,11 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": ext_agent,
             "match": agent_match,
         }
-        if not agent_match:
-            overall_match = False
+        max_possible_score += 2
+        if agent_match:
+            weighted_score += 2
 
-    # ── Nombre cliente ──────────────────────────────────────────────────
+    # Nombre cliente (weight: 2)
     ext_client = (extracted.get("client_name") or "").strip()
     exp_client = (expected.get("nombre_cliente") or "").strip()
     if exp_client:
@@ -280,46 +339,11 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": ext_client,
             "match": client_match,
         }
-        if not client_match:
-            overall_match = False
+        max_possible_score += 2
+        if client_match:
+            weighted_score += 2
 
-    # ── Property REF ────────────────────────────────────────────────────
-    ext_ref = (extracted.get("property_ref") or "").strip().upper().replace(" ", "")
-    exp_ref = (expected.get("ref_propiedad") or "").strip().upper().replace(" ", "")
-    if exp_ref:
-        ref_match = (
-            ext_ref == exp_ref
-            or ext_ref.startswith(exp_ref)
-            or exp_ref.startswith(ext_ref)
-            or exp_ref in ext_ref
-            or ext_ref in exp_ref
-        )
-        results["ref_propiedad"] = {
-            "expected": expected.get("ref_propiedad", ""),
-            "found": extracted.get("property_ref", ""),
-            "match": ref_match,
-        }
-        if not ref_match:
-            overall_match = False
-
-    # ── Nº solicitud/demanda ────────────────────────────────────────────
-    ext_demand = (extracted.get("demand_number") or "").strip()
-    exp_demand = (expected.get("num_demanda") or "").strip()
-    if exp_demand:
-        demand_match = (
-            ext_demand == exp_demand
-            or ext_demand in exp_demand
-            or exp_demand in ext_demand
-        )
-        results["solicitud_demanda"] = {
-            "expected": exp_demand,
-            "found": ext_demand,
-            "match": demand_match,
-        }
-        if not demand_match:
-            overall_match = False
-
-    # ── Visit date (±7 days tolerance) ──────────────────────────────────
+    # Visit date ±7 days (weight: 2)
     ext_date_raw = (extracted.get("visit_date") or "").strip()
     exp_date_raw = (expected.get("fecha_visita") or "").strip()
     if exp_date_raw:
@@ -329,10 +353,13 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": ext_date_raw,
             "match": date_match,
         }
-        if not date_match:
-            overall_match = False
+        max_possible_score += 2
+        if date_match:
+            weighted_score += 2
 
-    # ── Tipo propiedad ──────────────────────────────────────────────────
+    # ── Secondary fields (low weight) ──────────────────────────────────
+
+    # Tipo propiedad (weight: 1)
     ext_type = (extracted.get("property_type") or "").strip()
     exp_type = (expected.get("tipo_propiedad") or "").strip()
     if exp_type:
@@ -342,10 +369,11 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": ext_type,
             "match": type_match,
         }
-        if not type_match:
-            overall_match = False
+        max_possible_score += 1
+        if type_match:
+            weighted_score += 1
 
-    # ── Dirección propiedad ─────────────────────────────────────────────
+    # Dirección propiedad (weight: 1)
     ext_addr = (extracted.get("property_address") or "").strip()
     exp_addr = (expected.get("direccion_propiedad") or "").strip()
     if exp_addr:
@@ -355,10 +383,11 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": ext_addr,
             "match": addr_match,
         }
-        if not addr_match:
-            overall_match = False
+        max_possible_score += 1
+        if addr_match:
+            weighted_score += 1
 
-    # ── Precio propiedad ────────────────────────────────────────────────
+    # Precio propiedad (weight: 1)
     ext_price = _normalize_price(extracted.get("property_price") or "")
     exp_price = _normalize_price(expected.get("precio_propiedad") or "")
     if exp_price:
@@ -368,21 +397,44 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": extracted.get("property_price", ""),
             "match": price_match,
         }
-        if not price_match:
-            overall_match = False
+        max_possible_score += 1
+        if price_match:
+            weighted_score += 1
 
-    # ── Firma cliente ───────────────────────────────────────────────────
+    # ── Firma cliente — quality indicator only, does NOT affect match ──
     sig_present = extracted.get("client_signature_present", False)
     results["firma_cliente"] = {
         "expected": "Presente",
         "found": "Presente" if sig_present else "No encontrada",
         "match": bool(sig_present),
     }
-    if not sig_present:
+
+    # ── Determine overall match ────────────────────────────────────────
+    # Match if: property_ref matches (strongest identifier)
+    # OR weighted score >= 4 (enough supporting evidence)
+    # OR score is >= 50% of max possible
+    ref_matched = results.get("ref_propiedad", {}).get("match", False)
+    demand_matched = results.get("solicitud_demanda", {}).get("match", False)
+
+    if max_possible_score == 0:
+        # No fields to compare — can't determine match
+        overall_match = False
+    elif ref_matched:
+        # Property ref is the strongest identifier — if it matches, it's a match
+        overall_match = True
+    elif demand_matched and weighted_score >= 4:
+        # Demand number matched + some supporting evidence
+        overall_match = True
+    elif weighted_score >= 4 and max_possible_score > 0:
+        # Enough weighted evidence even without primary identifiers
+        overall_match = True
+    else:
         overall_match = False
 
     return {
         "match": overall_match,
+        "score": weighted_score,
+        "max_score": max_possible_score,
         "fields": results,
         "extracted": extracted,
     }
@@ -446,7 +498,12 @@ def extraer_datos_hoja_por_pagina(pdf_path: Path, api_key: str) -> list[dict]:
 
 
 def emparejar_hojas(extractions: list[dict], checks: list[dict]) -> dict:
-    """Match extracted page data to expected checks.
+    """Match extracted page data to expected checks using weighted scoring.
+
+    Uses a two-pass approach:
+    1. First pass: find best matches using weighted scores
+    2. Second pass: assign remaining extractions to unmatched checks if
+       there is any positive evidence
 
     Args:
         extractions: list of dicts from extraer_datos_hoja_por_pagina
@@ -454,36 +511,64 @@ def emparejar_hojas(extractions: list[dict], checks: list[dict]) -> dict:
                 num_demanda, fecha_visita, nombre_cliente, etc.
 
     Returns:
-        dict mapping check_id -> {match, fields, extracted, page} or None
+        dict mapping check_id -> {match, score, fields, extracted, page} or None
     """
+    import logging
+    log = logging.getLogger("hoja_extractor")
+
+    # Build a score matrix: (check_idx, extraction_idx) -> verification result
+    score_matrix = []
+    for ci, check in enumerate(checks):
+        for ei, ext in enumerate(extractions):
+            ver = verificar_hoja(ext, check)
+            score_matrix.append({
+                "check_idx": ci,
+                "ext_idx": ei,
+                "score": ver["score"],
+                "match": ver["match"],
+                "result": ver,
+            })
+
+    # Sort by score descending — best matches first
+    score_matrix.sort(key=lambda x: x["score"], reverse=True)
+
     results = {}
+    used_checks = set()
     used_extractions = set()
 
-    for check in checks:
-        best_score = -1
-        best_idx = -1
-        best_result = None
+    # Assign best matches greedily by highest score
+    for entry in score_matrix:
+        ci = entry["check_idx"]
+        ei = entry["ext_idx"]
+        if ci in used_checks or ei in used_extractions:
+            continue
+        if entry["score"] <= 0:
+            continue
 
-        for idx, ext in enumerate(extractions):
-            if idx in used_extractions:
-                continue
+        check = checks[ci]
+        check_id = check.get("id", str(ci))
 
-            ver = verificar_hoja(ext, check)
-            score = sum(1 for f in ver["fields"].values() if f["match"])
+        used_checks.add(ci)
+        used_extractions.add(ei)
+        entry["result"]["page"] = extractions[ei].get("_page", 0)
+        results[check_id] = entry["result"]
 
-            if score > best_score:
-                best_score = score
-                best_idx = idx
-                best_result = ver
+        log.info(
+            f"[MATCH] Check {check_id} (ref={check.get('ref_propiedad','?')}) "
+            f"<-> page {entry['result']['page']} "
+            f"(extracted ref={extractions[ei].get('property_ref','?')}) "
+            f"score={entry['score']} match={entry['match']}"
+        )
 
-        check_id = check.get("id", str(checks.index(check)))
-
-        if best_idx >= 0 and best_score > 0:
-            used_extractions.add(best_idx)
-            best_result["page"] = extractions[best_idx].get("_page", 0)
-            results[check_id] = best_result
-        else:
+    # Fill in unmatched checks as None
+    for ci, check in enumerate(checks):
+        check_id = check.get("id", str(ci))
+        if check_id not in results:
             results[check_id] = None
+            log.info(
+                f"[NO MATCH] Check {check_id} "
+                f"(ref={check.get('ref_propiedad','?')}) — no extraction matched"
+            )
 
     return results
 
