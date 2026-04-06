@@ -1236,46 +1236,29 @@
     /* ── Chatbot view ──────────────────────────────────── */
     #view-chatbot {
       display: none;
-      height: calc(100vh - 72px);
-      flex-direction: column;
+      padding: 60px 24px 40px;
+      max-width: 900px;
+      margin: 0 auto;
     }
-    #view-chatbot.visible { display: flex; }
+    #view-chatbot.visible { display: block; }
 
-    .chat-toolbar {
-      padding: 12px 24px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid var(--gray-200);
+    .chat-container {
       background: var(--white);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 240px);
+      min-height: 400px;
     }
-    .chat-toolbar .btn-back-inline {
-      display: flex; align-items: center; gap: 6px;
-      background: none; border: none; cursor: pointer;
-      font-size: 13px; font-weight: 600; color: var(--gray-600);
-      padding: 6px 0;
-    }
-    .chat-toolbar .btn-back-inline:hover { color: var(--blue); }
-    .chat-toolbar .chat-title {
-      font-size: 15px; font-weight: 700; color: var(--gray-800);
-    }
-    .chat-toolbar-right {
-      margin-left: auto; display: flex; gap: 8px;
-    }
-    .chat-toolbar-btn {
-      padding: 5px 14px; border-radius: 6px; font-size: 12px;
-      font-weight: 600; cursor: pointer; border: 1px solid var(--gray-200);
-      background: var(--white); color: var(--gray-600);
-      transition: all 0.15s;
-    }
-    .chat-toolbar-btn:hover { background: var(--gray-50); color: var(--blue); border-color: var(--blue); }
 
     .chat-messages {
       flex: 1; overflow-y: auto; padding: 20px 24px;
       display: flex; flex-direction: column; gap: 14px;
-      background: var(--gray-bg);
+      background: var(--gray-50);
     }
-    .chat-msg { max-width: 70%; animation: chatFadeIn 0.25s ease; }
+    .chat-msg { max-width: 75%; animation: chatFadeIn 0.25s ease; }
     .chat-msg.user { align-self: flex-end; }
     .chat-msg.assistant { align-self: flex-start; }
     @keyframes chatFadeIn {
@@ -1342,7 +1325,7 @@
     .chat-prop-card-body .chat-prop-ref { font-size: 10px; color: var(--gray-400); margin-top: 4px; }
 
     .chat-input-area {
-      padding: 12px 24px; background: var(--white);
+      padding: 14px 20px; background: var(--white);
       border-top: 1px solid var(--gray-200);
       display: flex; gap: 10px; align-items: flex-end;
     }
@@ -2602,33 +2585,36 @@
 
   <!-- Chatbot View -->
   <div id="view-chatbot">
-    <div class="chat-toolbar">
-      <button class="btn-back-inline" id="btn-back-dashboard-chat">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="15 18 9 12 15 6"/></svg>
-        Volver
-      </button>
-      <span class="chat-title">Chatbot Inmobiliario</span>
-      <div class="chat-toolbar-right">
-        <button class="chat-toolbar-btn" id="chat-btn-sync" title="Sincronizar propiedades">Sync</button>
-        <button class="chat-toolbar-btn" id="chat-btn-leads" title="Ver leads">Leads</button>
+    <button class="btn-back-dashboard" id="btn-back-dashboard-chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Volver al dashboard
+    </button>
+
+    <div class="modelo-page-card">
+      <div class="modelo-page-header">
+        <div class="modelo-page-title">Chatbot Inmobiliario</div>
+        <div class="modelo-page-subtitle">Asistente IA para clientes — busqueda de propiedades y captura de leads</div>
       </div>
-    </div>
-    <div class="chat-messages" id="chat-messages">
-      <div class="chat-welcome" id="chat-welcome">
-        <h2>Cardenas Real Estate</h2>
-        <p>Soy el asistente virtual. Preguntame sobre propiedades en Gran Canaria, servicios, o lo que necesites.</p>
+
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-welcome" id="chat-welcome">
+            <h2>Cardenas Real Estate</h2>
+            <p>Soy el asistente virtual. Preguntame sobre propiedades en Gran Canaria, servicios, o lo que necesites.</p>
+          </div>
+          <div class="chat-typing" id="chat-typing">
+            <div class="chat-typing-dots"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <textarea id="chat-input" rows="1" placeholder="Escribe tu mensaje..."></textarea>
+          <button class="chat-send-btn" id="chat-send-btn" title="Enviar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/>
+            </svg>
+          </button>
+        </div>
       </div>
-      <div class="chat-typing" id="chat-typing">
-        <div class="chat-typing-dots"><span></span><span></span><span></span></div>
-      </div>
-    </div>
-    <div class="chat-input-area">
-      <textarea id="chat-input" rows="1" placeholder="Escribe tu mensaje..."></textarea>
-      <button class="chat-send-btn" id="chat-send-btn" title="Enviar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/>
-        </svg>
-      </button>
     </div>
   </div>
 
@@ -3327,26 +3313,7 @@
 
       document.getElementById('btn-back-dashboard-leads').addEventListener('click', showDashboard);
 
-      // ── Chat toolbar buttons ──
-      document.getElementById('chat-btn-leads').addEventListener('click', function() {
-        hideAllViews();
-        viewDashboardEl.classList.remove('visible');
-        document.getElementById('view-leads').classList.add('visible');
-        loadLeadsView();
-      });
-
-      document.getElementById('chat-btn-sync').addEventListener('click', function() {
-        document.getElementById('modal-sync').classList.add('active');
-        // load sync status into modal
-        var statusEl = document.getElementById('sync-status-text');
-        if (statusEl) {
-          fetch('/chatbot/api/sync/status').then(function(r){return r.json();}).then(function(d){
-            if (d.synced && d.meta) {
-              statusEl.innerHTML = 'Ultima sync: ' + new Date(d.meta.last_sync).toLocaleString('es-ES') + ' — ' + d.property_count + ' propiedades';
-            }
-          }).catch(function(){});
-        }
-      });
+      // (Sync and Leads accessible from their own dashboard cards)
 
       // ── Sync button — opens sync modal ──
       document.getElementById('btn-start-sync').addEventListener('click', function() {
