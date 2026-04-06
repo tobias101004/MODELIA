@@ -1932,24 +1932,6 @@
     </div>
   </div>
 
-  <!-- How it works Modal — 600 -->
-  <div class="modal-overlay" id="modal-how-600">
-    <div class="modal-box" style="max-width:520px;">
-      <h2>Modelo 600 — Como funciona</h2>
-      <div class="legal-text" style="max-height:none;">
-        <p><strong>Proximamente disponible.</strong></p>
-        <br>
-        <p>El Modelo 600 es la autoliquidacion del Impuesto sobre Transmisiones Patrimoniales y Actos Juridicos Documentados. Se presenta ante la comunidad autonoma correspondiente en operaciones como compraventas de inmuebles, vehiculos o constituciones de sociedades.</p>
-        <br>
-        <p>Estamos trabajando para que MODELIA pueda generar este formulario de forma automatica a partir de la documentacion notarial, con la misma facilidad que el Modelo 211.</p>
-        <br>
-        <p><strong>Te avisaremos cuando este disponible.</strong></p>
-      </div>
-      <div class="modal-actions">
-        <button class="modal-btn-close" id="modal-how-600-close">Cerrar</button>
-      </div>
-    </div>
-  </div>
 
   <!-- How it works Modal — Comprobación -->
   <div class="modal-overlay" id="modal-how-comprobacion">
@@ -2104,15 +2086,6 @@
           <span class="badge-soon">Escritura necesaria</span>
           <button class="btn-primary" id="btn-start-211">Empezar</button>
           <button class="card-how-link" id="btn-how-211" type="button">Como funciona?</button>
-        </div>
-        <!-- Modelo 600 -->
-        <div class="model-card">
-          <div class="model-card-number">600</div>
-          <div class="model-card-title">Modelo 600</div>
-          <div class="model-card-subtitle">Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados</div>
-          <span class="badge-soon">Próximamente</span>
-          <button class="btn-primary" disabled>Empezar</button>
-          <button class="card-how-link" id="btn-how-600" type="button">Como funciona?</button>
         </div>
         <!-- Comprobación -->
         <div class="model-card">
@@ -3299,7 +3272,6 @@
         modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); });
       }
       setupHowModal('btn-how-211', 'modal-how-211', 'modal-how-211-close');
-      setupHowModal('btn-how-600', 'modal-how-600', 'modal-how-600-close');
       setupHowModal('btn-how-factura', 'modal-how-factura', 'modal-how-factura-close');
 
       // ── Factura button — opens Telegram bot ──
