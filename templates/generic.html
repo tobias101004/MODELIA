@@ -3080,11 +3080,17 @@
         if (e.target === this) this.classList.remove('active');
       });
 
+      var _syncTimers = [];
       document.getElementById('sync-go-btn').addEventListener('click', function() {
         var btn = this;
         var url = document.getElementById('sync-url-input').value.trim();
         if (!url) return;
 
+        // Clear any previous timers
+        _syncTimers.forEach(function(t) { clearTimeout(t); });
+        _syncTimers = [];
+
+        var syncDone = false;
         btn.disabled = true;
         btn.textContent = 'Sincronizando...';
 
@@ -3097,24 +3103,18 @@
         progress.style.display = 'block';
         result.style.display = 'none';
 
-        // Animate progress bar while waiting
-        bar.style.width = '10%'; percent.textContent = '10%';
-        step.textContent = 'Descargando XML del servidor...';
+        function setProgress(pct, text) {
+          if (syncDone) return;
+          bar.style.width = pct + '%';
+          percent.textContent = pct + '%';
+          step.textContent = text;
+        }
 
-        setTimeout(function() {
-          bar.style.width = '30%'; percent.textContent = '30%';
-          step.textContent = 'Parseando propiedades del XML...';
-        }, 500);
-
-        setTimeout(function() {
-          bar.style.width = '50%'; percent.textContent = '50%';
-          step.textContent = 'Eliminando propiedades anteriores...';
-        }, 1200);
-
-        setTimeout(function() {
-          bar.style.width = '70%'; percent.textContent = '70%';
-          step.textContent = 'Subiendo propiedades a Supabase...';
-        }, 2000);
+        setProgress(10, 'Descargando XML del servidor...');
+        _syncTimers.push(setTimeout(function() { setProgress(30, 'Parseando propiedades del XML...'); }, 800));
+        _syncTimers.push(setTimeout(function() { setProgress(50, 'Eliminando propiedades anteriores...'); }, 2000));
+        _syncTimers.push(setTimeout(function() { setProgress(70, 'Subiendo propiedades a Supabase...'); }, 3500));
+        _syncTimers.push(setTimeout(function() { setProgress(85, 'Casi listo...'); }, 5000));
 
         fetch('/chatbot/api/sync', {
           method: 'POST',
@@ -3123,7 +3123,11 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          bar.style.width = '100%'; percent.textContent = '100%';
+          syncDone = true;
+          _syncTimers.forEach(function(t) { clearTimeout(t); });
+
+          bar.style.width = '100%';
+          percent.textContent = '100%';
 
           if (data.ok || data.total_properties) {
             step.textContent = 'Completado';
@@ -3134,7 +3138,12 @@
               '<div style="font-size:14px;font-weight:600;color:#15803d;margin-bottom:4px;">Sincronizacion completada</div>' +
               '<div style="font-size:13px;color:#166534;">' + data.total_properties + ' propiedades cargadas correctamente.</div>' +
               '<div style="font-size:11px;color:#6b7280;margin-top:6px;">' + new Date().toLocaleString('es-ES') + '</div>';
-            btn.textContent = 'Listo';
+            btn.disabled = false;
+            btn.textContent = 'Cerrar';
+            btn.onclick = function() {
+              document.getElementById('modal-sync').classList.remove('active');
+              btn.onclick = null;
+            };
           } else {
             step.textContent = 'Error';
             result.style.display = 'block';
@@ -3147,8 +3156,12 @@
             btn.textContent = 'Reintentar';
           }
         })
-        .catch(function(err) {
+        .catch(function() {
+          syncDone = true;
+          _syncTimers.forEach(function(t) { clearTimeout(t); });
+
           bar.style.width = '100%';
+          percent.textContent = '—';
           step.textContent = 'Error de conexion';
           result.style.display = 'block';
           result.style.background = '#fef2f2';
