@@ -245,7 +245,7 @@ def chat(api_key: str, chat_id: str, messages: list[dict]) -> str:
     full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
 
     response = client.chat.completions.create(
-        model="gpt-5",
+        model="gpt-4.1-mini",
         messages=full_messages,
         tools=TOOLS,
         max_completion_tokens=1024,
@@ -266,7 +266,7 @@ def chat(api_key: str, chat_id: str, messages: list[dict]) -> str:
             })
 
         response = client.chat.completions.create(
-            model="gpt-5",
+            model="gpt-4.1-mini",
             messages=full_messages,
             tools=TOOLS,
             max_completion_tokens=1024,
@@ -289,7 +289,7 @@ def chat_stream(api_key: str, chat_id: str, messages: list[dict]):
 
     while True:
         stream = client.chat.completions.create(
-            model="gpt-5",
+            model="gpt-4.1-mini",
             messages=full_messages,
             tools=TOOLS,
             max_completion_tokens=1024,
