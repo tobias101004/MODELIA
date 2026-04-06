@@ -1297,6 +1297,16 @@
       0%,60%,100% { transform: translateY(0); }
       30% { transform: translateY(-5px); }
     }
+    .chat-bubble a.chat-link {
+      color: var(--blue); text-decoration: underline;
+      word-break: break-all;
+    }
+    .chat-bubble a.chat-link:hover { color: var(--blue-light); }
+    .chat-inline-img {
+      max-width: 100%; border-radius: 8px; margin: 8px 0 4px;
+      display: block; max-height: 250px; object-fit: cover;
+    }
+
     .chat-welcome {
       text-align: center; padding: 50px 20px; color: var(--gray-400);
     }
@@ -4900,11 +4910,35 @@
       return d.innerHTML;
     }
 
+    function chatFormatText(text) {
+      // Escape HTML first
+      var safe = chatEsc(text);
+      // Convert image URLs to inline images (jpg, jpeg, png, webp)
+      safe = safe.replace(/(https?:\/\/[^\s<]+\.(?:jpg|jpeg|png|webp)(?:\?[^\s<]*)?)/gi, function(url) {
+        return '<a href="' + url + '" target="_blank" rel="noopener"><img src="' + url + '" class="chat-inline-img" loading="lazy"></a>';
+      });
+      // Convert remaining URLs to clickable links
+      safe = safe.replace(/(https?:\/\/[^\s<]+)/gi, function(url) {
+        // Skip if already inside an href or src attribute
+        var label = url.length > 50 ? url.substring(0, 47) + '...' : url;
+        return '<a href="' + url + '" target="_blank" rel="noopener" class="chat-link">' + label + '</a>';
+      });
+      // Fix double-wrapped links from image conversion
+      safe = safe.replace(/<a [^>]*><a [^>]*><img/g, '<a');
+      // Convert newlines to <br>
+      safe = safe.replace(/\n/g, '<br>');
+      return safe;
+    }
+
     function chatAddMsg(role, content) {
       if (welcomeEl) welcomeEl.style.display = 'none';
       var div = document.createElement('div');
       div.className = 'chat-msg ' + role;
-      div.innerHTML = '<div class="chat-bubble">' + chatEsc(content) + '</div>';
+      if (role === 'user') {
+        div.innerHTML = '<div class="chat-bubble">' + chatEsc(content) + '</div>';
+      } else {
+        div.innerHTML = '<div class="chat-bubble">' + chatFormatText(content) + '</div>';
+      }
       messagesEl.insertBefore(div, typingEl);
       chatScroll();
       return div;
@@ -4983,6 +5017,11 @@
                 } else if (ev.type === 'properties') {
                   chatAddProps(ev.data);
                 } else if (ev.type === 'done') {
+                  // Final render pass: convert links and images
+                  if (assistantDiv && assistantText) {
+                    assistantDiv.querySelector('.chat-bubble').innerHTML = chatFormatText(assistantText);
+                    chatScroll();
+                  }
                   if (assistantText) chatHistory.push({ role: 'assistant', content: assistantText });
                 } else if (ev.type === 'error') {
                   chatAddMsg('assistant', 'Lo siento, ha ocurrido un error. Int\u00e9ntalo de nuevo.');
