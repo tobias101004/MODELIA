@@ -6,14 +6,14 @@
 <title>Cárdenas Real Estate — Chat</title>
 <style>
   :root {
-    --primary: #1a3a5c;
-    --primary-light: #2a5a8c;
-    --accent: #c8a45a;
-    --bg: #f5f3ef;
+    --primary: #133d8d;
+    --primary-light: #1a4fa6;
+    --accent: #fcbb16;
+    --bg: #f5f6f8;
     --white: #ffffff;
     --text: #2c2c2c;
     --text-light: #6b7280;
-    --border: #e5e2dc;
+    --border: #e2e5ea;
     --shadow: 0 2px 12px rgba(0,0,0,0.08);
     --radius: 16px;
   }
@@ -214,8 +214,8 @@
   }
   .send-btn {
     width: 44px; height: 44px;
-    background: var(--primary);
-    color: var(--white);
+    background: var(--accent);
+    color: var(--primary);
     border: none;
     border-radius: 50%;
     cursor: pointer;
@@ -223,7 +223,7 @@
     transition: background 0.2s, transform 0.1s;
     flex-shrink: 0;
   }
-  .send-btn:hover { background: var(--primary-light); }
+  .send-btn:hover { background: #e5a914; }
   .send-btn:active { transform: scale(0.95); }
   .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .send-btn svg { width: 20px; height: 20px; }
@@ -259,7 +259,7 @@
     padding: 8px 20px; border-radius: 8px;
     font-size: 14px; cursor: pointer; border: none;
   }
-  .btn-primary { background: var(--primary); color: var(--white); }
+  .btn-primary { background: var(--accent); color: var(--primary); font-weight: 600; }
   .btn-primary:disabled { opacity: 0.5; }
   .btn-secondary { background: var(--border); color: var(--text); }
   .sync-status { font-size: 13px; color: var(--text-light); margin-bottom: 16px; }
