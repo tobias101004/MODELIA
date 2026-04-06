@@ -51,36 +51,45 @@ Una vez tengas nombre + email o teléfono, llama a save_lead. Confirma con calid
 muy pronto."
 
 BÚSQUEDA DE PROPIEDADES:
-Cuando un comprador describe lo que busca, usa search_properties con filtros \
-amplios para no perder resultados (ej: si pide 1 dormitorio, busca sin filtro de \
-dormitorios porque muchos estudios/apartamentos tienen 0 en el campo pero sí \
-tienen habitación). Presenta máximo 2-3 resultados de forma natural:
-"Esta te puede encajar genial: es un [tipo] en [zona], por [precio]€. \
-Tiene [característica] y [característica]."
+Cuando un comprador dice lo que busca, llama a search_properties INMEDIATAMENTE. \
+NUNCA digas "no hay propiedades" sin haber llamado primero a la herramienta.
+
+Reglas de filtros:
+- price_max: SIEMPRE usa el presupuesto máximo que diga el cliente. NUNCA \
+muestres propiedades que superen ese precio.
+- operation: usa "venta" o "alquiler" según lo que pida.
+- location: usa la zona/ciudad que mencione.
+- bedrooms_min: NO uses este filtro (muchas propiedades tienen 0 dormitorios en \
+los datos pero en realidad sí tienen habitaciones). Filtra tú después con los \
+resultados.
+- property_type: usa el tipo si lo menciona.
+
+Presenta máximo 2-3 resultados que CUMPLAN lo que pidió el cliente. Introduce \
+cada uno de forma natural con precio, zona y características clave.
 
 DATOS QUE TIENES DE CADA PROPIEDAD:
-Los resultados de search_properties incluyen TODA la información disponible:
-- Datos básicos: ref, tipo, precio, zona, dormitorios, baños, superficie
-- Descripción completa en español
-- Lista de características (piscina, terraza, vistas al mar, etc.)
-- Fotos: array con URLs de todas las fotos disponibles (photos)
-- Video: URL de video de YouTube si existe (video)
-- Tour virtual: URL de tour 360° si existe (tour)
-- Estado, orientación, año de construcción, certificado energético
-- Distancia al mar en metros
-- Datos del agente asignado (nombre, email, teléfono)
+Los resultados incluyen TODA la información: ref, tipo, precio, zona, \
+dormitorios, baños, superficie, descripción completa, fotos (array de URLs), \
+video de YouTube, tour virtual 360°, características, estado, orientación, \
+año, certificado energético, distancia al mar, y datos del agente.
 
 Cuando el cliente pida fotos, video o tour virtual, comparte los links \
-directamente si están disponibles en los datos. NO digas que no tienes acceso.
+directamente. Tienes acceso a todo — NO digas que no puedes mostrar fotos.
 
-MUY IMPORTANTE:
-- No conoces el catálogo de memoria. SIEMPRE usa la herramienta search_properties.
-- NUNCA inventes propiedades ni datos que no vengan de la herramienta.
-- Si no hay resultados, prueba con filtros más amplios antes de rendirte. \
-Si sigue sin haber nada, ofrece capturar los datos del cliente.
-- Incluye siempre la referencia (ref) de cada propiedad.
-- Si el cliente pide más detalles de una propiedad ya mostrada, usa los datos \
-que ya tienes — no necesitas volver a buscar.
+REGLAS CRÍTICAS (OBLIGATORIAS):
+1. Si el usuario menciona CUALQUIER cosa sobre buscar, comprar, alquilar, o ver \
+propiedades → llama a search_properties INMEDIATAMENTE. No hagas preguntas \
+previas. Busca primero, pregunta después si necesitas afinar.
+2. NUNCA digas "no hay propiedades disponibles" sin haber llamado a \
+search_properties en este mismo turno. Es IMPOSIBLE que sepas si hay o no \
+sin buscar.
+3. NUNCA muestres una propiedad que supere el presupuesto del cliente.
+4. NUNCA inventes datos. Solo usa lo que devuelve la herramienta.
+5. Incluye siempre la referencia (ref).
+6. Si la búsqueda no devuelve resultados, intenta de nuevo con filtros más \
+amplios (quita location o property_type) antes de decir que no hay nada.
+7. Si el cliente pide más detalles de una propiedad ya mostrada, usa los datos \
+que ya tienes.
 
 SOBRE LA AGENCIA:
 - Nombre: Cárdenas Real Estate
@@ -96,13 +105,12 @@ TOOLS = [
         "function": {
             "name": "search_properties",
             "description": (
-                "Search the property catalogue by filters. Returns matching "
-                "listings with ALL details including photos, videos, tour, "
-                "description, agent info, etc. Use broad filters — many "
-                "properties have 0 bedrooms in the data but actually have "
-                "rooms (studios). Prefer searching without bedrooms_min "
-                "and filtering results yourself. Always search before "
-                "saying there are no properties available."
+                "Search the property catalogue. You MUST call this tool "
+                "whenever the user mentions buying, renting, or looking for "
+                "properties. NEVER say there are no properties without calling "
+                "this first. Always pass price_max if the user gave a budget. "
+                "Do NOT use bedrooms_min (data is unreliable for that field). "
+                "Returns full details: photos, video, tour, description, etc."
             ),
             "parameters": {
                 "type": "object",
@@ -200,17 +208,28 @@ TOOLS = [
 def _execute_tool(tool_name: str, args: dict, chat_id: str) -> str:
     """Execute a tool call and return the result as a string."""
     if tool_name == "search_properties":
+        price_max = args.get("price_max", 0)
         results = property_sync.search_properties(
             operation=args.get("operation", ""),
             property_type=args.get("property_type", ""),
             location=args.get("location", ""),
-            bedrooms_min=args.get("bedrooms_min", 0),
-            price_max=args.get("price_max", 0),
+            bedrooms_min=0,  # Never filter by bedrooms (data unreliable)
+            price_max=price_max,
             price_min=args.get("price_min", 0),
             features=args.get("features"),
         )
+
+        # Hard enforcement: never return properties above budget
+        if price_max:
+            results = [p for p in results if (p.get("price") or 0) <= price_max]
+
         if not results:
-            return json.dumps({"results": [], "message": "No matching properties found"})
+            return json.dumps({
+                "results": [],
+                "message": "No properties match these exact filters. "
+                "Try calling again with fewer filters (remove location or type) "
+                "to find alternatives for the client."
+            })
 
         # Return full data so the agent can answer any question
         enriched = []
