@@ -188,6 +188,29 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "get_property",
+            "description": (
+                "Get ALL details of a specific property by its REF code. "
+                "Use this when the user asks for more info, photos, video, "
+                "tour, description, or any detail about a property already "
+                "mentioned. Returns everything: full description, all photo "
+                "URLs, video URL, tour URL, agent contact, etc."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ref": {
+                        "type": "string",
+                        "description": "Property reference code, e.g. 05800-CA",
+                    },
+                },
+                "required": ["ref"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "save_lead",
             "description": (
                 "Save a potential client's contact info as a lead. Call this "
@@ -298,6 +321,42 @@ def _execute_tool(tool_name: str, args: dict, chat_id: str) -> str:
             })
         return json.dumps({"results": enriched, "total": len(results)}, ensure_ascii=False)
 
+    elif tool_name == "get_property":
+        ref = args.get("ref", "")
+        props = property_sync.load_properties()
+        found = [p for p in props if (p.get("ref") or "") == ref]
+        if not found:
+            return json.dumps({"error": f"Property {ref} not found"})
+        p = found[0]
+        return json.dumps({
+            "ref": p.get("ref", ""),
+            "title": p.get("title_es", ""),
+            "type": p.get("type", ""),
+            "operation": p.get("operation", ""),
+            "price": p.get("price", 0),
+            "city": p.get("city", ""),
+            "zone": p.get("zone", ""),
+            "bedrooms": p.get("bedrooms", 0),
+            "bathrooms": p.get("bathrooms", 0),
+            "surface_built": p.get("surface_built", 0),
+            "surface_terrace": p.get("surface_terrace", 0),
+            "surface_plot": p.get("surface_plot", 0),
+            "features": p.get("features", []),
+            "condition": p.get("condition", ""),
+            "orientation": p.get("orientation", ""),
+            "year_built": p.get("year_built", ""),
+            "energy_rating": p.get("energy_rating", ""),
+            "distance_to_sea": p.get("distance_to_sea", 0),
+            "description": p.get("description_es", ""),
+            "photo_main": p.get("photo_main", ""),
+            "photos": p.get("photos", []),
+            "video": p.get("video", ""),
+            "tour": p.get("tour", ""),
+            "agent_name": p.get("agent_name", ""),
+            "agent_email": p.get("agent_email", ""),
+            "agent_phone": p.get("agent_phone", ""),
+        }, ensure_ascii=False)
+
     elif tool_name == "save_lead":
         lead_id = database.save_lead(
             chat_id=chat_id,
@@ -367,7 +426,6 @@ def chat_stream(api_key: str, chat_id: str, messages: list[dict]):
     """
     client = OpenAI(api_key=api_key)
     full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
-    last_search_results = []
 
     while True:
         stream = client.chat.completions.create(
@@ -439,21 +497,11 @@ def chat_stream(api_key: str, chat_id: str, messages: list[dict]):
             if tc["name"] == "search_properties":
                 result_data = json.loads(result)
                 if result_data.get("results"):
-                    last_search_results = result_data["results"]
+                    # Send cards BEFORE the bot's text response (max 3)
+                    # Filters (price, zone) are already enforced server-side
+                    yield {"type": "properties", "data": result_data["results"][:3]}
 
         # Loop back to get the agent's response after tool execution
         collected_content = ""
-
-    # After streaming is done, extract which REFs the bot actually mentioned
-    # and only show property cards for those
-    if last_search_results and collected_content:
-        mentioned_refs = set(re.findall(r'\b(\d{5}-CA)\b', collected_content))
-        if mentioned_refs:
-            matched = [p for p in last_search_results if p.get("ref") in mentioned_refs]
-            if matched:
-                yield {"type": "properties", "data": matched}
-        else:
-            # Bot mentioned properties but without REF format — show first 3
-            yield {"type": "properties", "data": last_search_results[:3]}
 
     yield {"type": "done"}
