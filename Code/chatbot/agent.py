@@ -51,21 +51,36 @@ Una vez tengas nombre + email o teléfono, llama a save_lead. Confirma con calid
 muy pronto."
 
 BÚSQUEDA DE PROPIEDADES:
-Cuando un comprador describe lo que busca, pregunta por: zona preferida, tipo \
-(apartamento/casa/etc), dormitorios, presupuesto, imprescindibles.
-Luego llama a search_properties. Presenta máximo 2-3 resultados. Introduce cada \
-uno de forma natural:
-"Esta te puede encajar genial: es un [tipo] de [X] dormitorios en [zona], por \
-[precio]€. Tiene [característica] y [característica]."
-Nunca vuelques una lista cruda. Nunca muestres más de 3.
+Cuando un comprador describe lo que busca, usa search_properties con filtros \
+amplios para no perder resultados (ej: si pide 1 dormitorio, busca sin filtro de \
+dormitorios porque muchos estudios/apartamentos tienen 0 en el campo pero sí \
+tienen habitación). Presenta máximo 2-3 resultados de forma natural:
+"Esta te puede encajar genial: es un [tipo] en [zona], por [precio]€. \
+Tiene [característica] y [característica]."
+
+DATOS QUE TIENES DE CADA PROPIEDAD:
+Los resultados de search_properties incluyen TODA la información disponible:
+- Datos básicos: ref, tipo, precio, zona, dormitorios, baños, superficie
+- Descripción completa en español
+- Lista de características (piscina, terraza, vistas al mar, etc.)
+- Fotos: array con URLs de todas las fotos disponibles (photos)
+- Video: URL de video de YouTube si existe (video)
+- Tour virtual: URL de tour 360° si existe (tour)
+- Estado, orientación, año de construcción, certificado energético
+- Distancia al mar en metros
+- Datos del agente asignado (nombre, email, teléfono)
+
+Cuando el cliente pida fotos, video o tour virtual, comparte los links \
+directamente si están disponibles en los datos. NO digas que no tienes acceso.
 
 MUY IMPORTANTE:
 - No conoces el catálogo de memoria. SIEMPRE usa la herramienta search_properties.
 - NUNCA inventes propiedades ni datos que no vengan de la herramienta.
-- Si no hay resultados, di que ahora mismo no hay nada que encaje exactamente, \
-pero que un asesor podría ayudarle con más opciones. Ofrece capturar sus datos.
-- Cuando muestres propiedades, incluye la referencia (ref) para que el equipo \
-pueda identificarla.
+- Si no hay resultados, prueba con filtros más amplios antes de rendirte. \
+Si sigue sin haber nada, ofrece capturar los datos del cliente.
+- Incluye siempre la referencia (ref) de cada propiedad.
+- Si el cliente pide más detalles de una propiedad ya mostrada, usa los datos \
+que ya tienes — no necesitas volver a buscar.
 
 SOBRE LA AGENCIA:
 - Nombre: Cárdenas Real Estate
@@ -82,8 +97,12 @@ TOOLS = [
             "name": "search_properties",
             "description": (
                 "Search the property catalogue by filters. Returns matching "
-                "listings with all details. Use this whenever the user asks "
-                "about available properties."
+                "listings with ALL details including photos, videos, tour, "
+                "description, agent info, etc. Use broad filters — many "
+                "properties have 0 bedrooms in the data but actually have "
+                "rooms (studios). Prefer searching without bedrooms_min "
+                "and filtering results yourself. Always search before "
+                "saying there are no properties available."
             ),
             "parameters": {
                 "type": "object",
@@ -193,29 +212,39 @@ def _execute_tool(tool_name: str, args: dict, chat_id: str) -> str:
         if not results:
             return json.dumps({"results": [], "message": "No matching properties found"})
 
-        # Return simplified data for the agent to present naturally
-        simplified = []
+        # Return full data so the agent can answer any question
+        enriched = []
         for p in results[:5]:  # max 5 for context, agent will pick 2-3
-            simplified.append({
-                "ref": p["ref"],
-                "title": p["title_es"],
-                "type": p["type"],
-                "operation": p["operation"],
-                "price": p["price"],
-                "city": p["city"],
-                "zone": p["zone"],
-                "bedrooms": p["bedrooms"],
-                "bathrooms": p["bathrooms"],
-                "surface_built": p["surface_built"],
-                "surface_terrace": p["surface_terrace"],
-                "features": p["features"],
-                "condition": p["condition"],
-                "photo_main": p["photo_main"],
-                "description": p["description_es"][:300],
-                "energy_rating": p["energy_rating"],
-                "distance_to_sea": p["distance_to_sea"],
+            enriched.append({
+                "ref": p.get("ref", ""),
+                "title": p.get("title_es", ""),
+                "type": p.get("type", ""),
+                "operation": p.get("operation", ""),
+                "price": p.get("price", 0),
+                "city": p.get("city", ""),
+                "zone": p.get("zone", ""),
+                "bedrooms": p.get("bedrooms", 0),
+                "bathrooms": p.get("bathrooms", 0),
+                "surface_built": p.get("surface_built", 0),
+                "surface_terrace": p.get("surface_terrace", 0),
+                "surface_plot": p.get("surface_plot", 0),
+                "features": p.get("features", []),
+                "condition": p.get("condition", ""),
+                "orientation": p.get("orientation", ""),
+                "year_built": p.get("year_built", ""),
+                "energy_rating": p.get("energy_rating", ""),
+                "distance_to_sea": p.get("distance_to_sea", 0),
+                "description": p.get("description_es", ""),
+                "photo_main": p.get("photo_main", ""),
+                "photos": p.get("photos", []),
+                "video": p.get("video", ""),
+                "tour": p.get("tour", ""),
+                "agent_name": p.get("agent_name", ""),
+                "agent_email": p.get("agent_email", ""),
+                "agent_phone": p.get("agent_phone", ""),
+                "exclusive": p.get("exclusive", False),
             })
-        return json.dumps({"results": simplified, "total": len(results)}, ensure_ascii=False)
+        return json.dumps({"results": enriched, "total": len(results)}, ensure_ascii=False)
 
     elif tool_name == "save_lead":
         lead_id = database.save_lead(

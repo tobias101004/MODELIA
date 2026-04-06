@@ -215,14 +215,17 @@ def search_properties(
     price_min: float = 0,
     features: list[str] | None = None,
 ) -> list[dict]:
-    """Search properties in Supabase with filters."""
+    """Search properties in Supabase with filters.
+
+    Uses broad DB-level filters (price, operation) and fuzzy client-side
+    filtering for type/location/features. Bedroom filter is intentionally
+    loose because many properties have 0 in the bedrooms field even though
+    they have rooms (studios, etc).
+    """
     query = _client.table("properties").select("*").eq("active", True)
 
     if operation:
         query = query.eq("operation", operation.lower())
-
-    if bedrooms_min:
-        query = query.gte("bedrooms", bedrooms_min)
 
     if price_max:
         query = query.lte("price", price_max)
