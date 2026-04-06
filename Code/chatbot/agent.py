@@ -6,6 +6,7 @@ OpenAI GPT-4o agent with function calling for Cárdenas Real Estate chatbot.
 import json
 import logging
 import re
+from pathlib import Path
 from openai import OpenAI
 
 from . import property_sync, database
@@ -27,13 +28,26 @@ en inglés, alemán, francés, holandés, noruego o sueco.
 persona.
 
 TUS FUNCIONES:
-1. Responder preguntas sobre la agencia, sus servicios, cómo funciona el proceso \
-de compra/venta/alquiler en Gran Canaria.
+1. Responder preguntas sobre la agencia, sus servicios, equipo, oficinas, etc. \
+Para esto, usa la herramienta get_agency_info para consultar la base de \
+conocimiento de Cárdenas. NUNCA inventes datos sobre la agencia.
 2. Ayudar a compradores a encontrar propiedades que encajen con lo que buscan.
 3. Ayudar a vendedores a entender cómo funciona poner su propiedad en venta con \
 la agencia.
 4. Capturar datos de contacto del cliente cuando hay intención real — nunca de \
 forma agresiva, siempre de forma natural.
+
+LÍMITES — lo que NO debes hacer:
+- NO respondas preguntas que no tengan relación con inmobiliaria, Gran Canaria \
+o Cárdenas. Si te preguntan por coches, política, recetas, etc., di amablemente: \
+"Solo puedo ayudarte con temas inmobiliarios en Gran Canaria. ¿Hay algo en lo \
+que pueda ayudarte con propiedades?"
+- NO inventes información. Si no sabes algo, dilo: "No tengo esa información \
+ahora mismo, pero puedes contactar directamente con nuestro equipo en \
+info@cardenas-grancanaria.com o llamar al +34 928 150 650."
+- NO alucines datos sobre propiedades, precios, servicios ni el equipo. \
+Usa SIEMPRE las herramientas (search_properties, get_property, get_agency_info) \
+para obtener datos reales.
 
 DETECCIÓN DE LEADS:
 Observa señales de intención seria:
@@ -133,6 +147,34 @@ SOBRE LA AGENCIA:
 """
 
 TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_agency_info",
+            "description": (
+                "Get information about Cárdenas Real Estate from the knowledge "
+                "base. Use this whenever the user asks about: the agency, team, "
+                "offices, services, contact info, opening hours, areas covered, "
+                "languages, reviews, why choose us, social responsibility, blog, "
+                "resources, legal services, or anything about the company. "
+                "Pass a topic keyword to get relevant info."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "description": (
+                            "Topic to look up: contact, team, services, offices, "
+                            "hours, areas, languages, reviews, why-choose-us, "
+                            "social-responsibility, legal, resources, about, all"
+                        ),
+                    },
+                },
+                "required": ["topic"],
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -261,9 +303,87 @@ TOOLS = [
 ]
 
 
+KB_PATH = Path(__file__).parent.parent.parent / "KB" / "cardenas_knowledge_base.txt"
+
+# Section keyword mapping for the KB
+_KB_SECTIONS = {
+    "about": ["1. COMPANY OVERVIEW", "2. KEY STATISTICS"],
+    "contact": ["3. CONTACT INFORMATION", "4. OFFICE LOCATIONS"],
+    "offices": ["4. OFFICE LOCATIONS"],
+    "hours": ["4. OFFICE LOCATIONS"],
+    "team": ["8. FULL TEAM ROSTER"],
+    "services": ["6. SERVICES"],
+    "areas": ["7. AREAS COVERED"],
+    "languages": ["5. LANGUAGES SPOKEN"],
+    "reviews": ["12. CUSTOMER REVIEWS"],
+    "why-choose-us": ["9. WHY CHOOSE CARDENAS"],
+    "social-responsibility": ["10. SOCIAL RESPONSIBILITY"],
+    "legal": ["6. SERVICES"],  # legal is under services
+    "resources": ["11. RESOURCES AVAILABLE"],
+    "blog": ["13. BLOG TOPICS"],
+    "careers": ["14. CAREERS"],
+    "gran-canaria": ["15. GRAN CANARIA ISLAND"],
+}
+
+
+def _load_kb_sections(topic: str) -> str:
+    """Load relevant sections from the KB file based on topic."""
+    if not KB_PATH.exists():
+        return "Knowledge base file not found."
+
+    full_text = KB_PATH.read_text(encoding="utf-8")
+
+    if topic == "all":
+        return full_text
+
+    # Pattern: ===sep=== \n TITLE \n ===sep=== \n content... \n ===sep===
+    lines = full_text.split("\n")
+    sections = {}
+    i = 0
+    while i < len(lines):
+        # Look for: separator, then title, then separator
+        if lines[i].strip().startswith("=" * 20):
+            if i + 2 < len(lines) and lines[i + 2].strip().startswith("=" * 20):
+                title = lines[i + 1].strip()
+                if title:
+                    # Collect content until next separator
+                    content_lines = []
+                    j = i + 3
+                    while j < len(lines):
+                        if lines[j].strip().startswith("=" * 20):
+                            break
+                        content_lines.append(lines[j])
+                        j += 1
+                    sections[title] = (title + "\n" + "\n".join(content_lines)).strip()
+                    i = j
+                    continue
+        i += 1
+
+    # Find matching sections
+    headers = _KB_SECTIONS.get(topic.lower().replace(" ", "-"), [])
+    if not headers:
+        # Fallback: keyword search
+        matched = [v for k, v in sections.items() if topic.lower() in k.lower()]
+        return "\n\n".join(matched) if matched else full_text
+
+    matched = []
+    for title, content in sections.items():
+        for header in headers:
+            if header in title:
+                matched.append(content)
+                break
+
+    return "\n\n".join(matched) if matched else full_text
+
+
 def _execute_tool(tool_name: str, args: dict, chat_id: str) -> str:
     """Execute a tool call and return the result as a string."""
-    if tool_name == "search_properties":
+    if tool_name == "get_agency_info":
+        topic = args.get("topic", "all")
+        info = _load_kb_sections(topic)
+        return info
+
+    elif tool_name == "search_properties":
         price_max = args.get("price_max", 0)
         results = property_sync.search_properties(
             operation=args.get("operation", ""),
