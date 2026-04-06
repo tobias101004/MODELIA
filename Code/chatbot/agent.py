@@ -5,6 +5,7 @@ OpenAI GPT-4o agent with function calling for Cárdenas Real Estate chatbot.
 
 import json
 import logging
+import re
 from openai import OpenAI
 
 from . import property_sync, database
@@ -351,6 +352,7 @@ def chat_stream(api_key: str, chat_id: str, messages: list[dict]):
     """
     client = OpenAI(api_key=api_key)
     full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
+    last_search_results = []
 
     while True:
         stream = client.chat.completions.create(
@@ -419,13 +421,24 @@ def chat_stream(api_key: str, chat_id: str, messages: list[dict]):
                 "content": result,
             })
 
-            # If it's a property search, yield the results for the UI
             if tc["name"] == "search_properties":
                 result_data = json.loads(result)
                 if result_data.get("results"):
-                    yield {"type": "properties", "data": result_data["results"]}
+                    last_search_results = result_data["results"]
 
         # Loop back to get the agent's response after tool execution
         collected_content = ""
+
+    # After streaming is done, extract which REFs the bot actually mentioned
+    # and only show property cards for those
+    if last_search_results and collected_content:
+        mentioned_refs = set(re.findall(r'\b(\d{5}-CA)\b', collected_content))
+        if mentioned_refs:
+            matched = [p for p in last_search_results if p.get("ref") in mentioned_refs]
+            if matched:
+                yield {"type": "properties", "data": matched}
+        else:
+            # Bot mentioned properties but without REF format — show first 3
+            yield {"type": "properties", "data": last_search_results[:3]}
 
     yield {"type": "done"}
