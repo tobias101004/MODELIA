@@ -16,7 +16,7 @@ from flask import Blueprint, Flask, Response, jsonify, render_template, request
 from . import agent, database, property_sync
 
 # Load .env from MODELIA root
-_modelia_dir = Path(__file__).resolve().parent.parent
+_modelia_dir = Path(__file__).resolve().parent.parent.parent
 _env_file = _modelia_dir / ".env"
 if _env_file.exists():
     load_dotenv(_env_file, override=False)
