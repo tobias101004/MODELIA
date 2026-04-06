@@ -4,3 +4,4 @@ pdfplumber
 openai
 python-dotenv
 PyMuPDF
+requests
