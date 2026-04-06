@@ -426,6 +426,7 @@ def chat_stream(api_key: str, chat_id: str, messages: list[dict]):
     """
     client = OpenAI(api_key=api_key)
     full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
+    last_search_results = []
 
     while True:
         stream = client.chat.completions.create(
@@ -497,9 +498,54 @@ def chat_stream(api_key: str, chat_id: str, messages: list[dict]):
             if tc["name"] == "search_properties":
                 result_data = json.loads(result)
                 if result_data.get("results"):
-                    # Send cards BEFORE the bot's text response (max 3)
-                    # Filters (price, zone) are already enforced server-side
-                    yield {"type": "properties", "data": result_data["results"][:3]}
+                    last_search_results = result_data["results"]
+
+        # After tool execution, get the bot's response WITHOUT streaming
+        # so we can extract mentioned REFs and send matching cards FIRST
+        if last_search_results:
+            response = client.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=full_messages,
+                tools=TOOLS,
+                max_completion_tokens=1024,
+            )
+            message = response.choices[0].message
+
+            # Handle any follow-up tool calls (rare but possible)
+            while message.tool_calls:
+                full_messages.append(message)
+                for tool_call in message.tool_calls:
+                    tc_args = json.loads(tool_call.function.arguments)
+                    tc_result = _execute_tool(tool_call.function.name, tc_args, chat_id)
+                    full_messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": tc_result,
+                    })
+                response = client.chat.completions.create(
+                    model="gpt-4.1-mini",
+                    messages=full_messages,
+                    tools=TOOLS,
+                    max_completion_tokens=1024,
+                )
+                message = response.choices[0].message
+
+            bot_text = message.content or ""
+
+            # Extract REFs mentioned in text → send only those cards
+            mentioned_refs = set(re.findall(r'\b(\d{5}-CA)\b', bot_text))
+            if mentioned_refs:
+                matched = [p for p in last_search_results if p.get("ref") in mentioned_refs]
+                if matched:
+                    yield {"type": "properties", "data": matched}
+            else:
+                yield {"type": "properties", "data": last_search_results[:2]}
+
+            # Send the text after cards
+            if bot_text:
+                collected_content = bot_text
+                yield {"type": "text", "content": bot_text}
+            break
 
         # Loop back to get the agent's response after tool execution
         collected_content = ""
