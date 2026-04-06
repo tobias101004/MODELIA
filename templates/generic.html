@@ -1845,6 +1845,40 @@
     </div>
   </div>
 
+  <!-- Sync Properties Modal -->
+  <div class="modal-overlay" id="modal-sync">
+    <div class="modal-box" style="max-width:480px;">
+      <h2 style="margin-bottom:4px;">Sincronizar Propiedades</h2>
+      <p style="font-size:13px;color:var(--gray-600);margin-bottom:20px;">Introduce el link del XML de Apinmo para actualizar las propiedades del chatbot.</p>
+
+      <div id="sync-form">
+        <label style="font-size:12px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">URL del feed XML</label>
+        <input type="text" id="sync-url-input" value="https://procesos.apinmo.com/xml/v2/L5iw2DpX/2934-web.xml"
+          style="width:100%;padding:10px 14px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;font-family:inherit;outline:none;margin-bottom:16px;">
+
+        <div id="sync-progress" style="display:none;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="flex:1;height:8px;background:var(--gray-100);border-radius:4px;overflow:hidden;">
+              <div id="sync-bar" style="width:0%;height:100%;background:var(--blue);border-radius:4px;transition:width 0.4s ease;"></div>
+            </div>
+            <span id="sync-percent" style="font-size:13px;font-weight:600;color:var(--blue);min-width:36px;">0%</span>
+          </div>
+          <p id="sync-step" style="font-size:12px;color:var(--gray-600);">Preparando...</p>
+        </div>
+
+        <div id="sync-result" style="display:none;padding:16px;border-radius:10px;margin-bottom:12px;">
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+          <button id="sync-close-btn" onclick="document.getElementById('modal-sync').classList.remove('active')"
+            style="padding:8px 20px;border-radius:8px;font-size:14px;cursor:pointer;border:none;background:var(--gray-100);color:var(--gray-800);font-weight:500;">Cerrar</button>
+          <button id="sync-go-btn"
+            style="padding:8px 24px;border-radius:8px;font-size:14px;cursor:pointer;border:none;background:var(--blue);color:white;font-weight:600;">Sincronizar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Account Modal (popup) -->
   <div class="modal-overlay" id="modal-account">
     <div class="modal-box" style="max-width:400px;">
@@ -3030,29 +3064,100 @@
         window.open('/chatbot/leads', '_blank');
       });
 
-      // ── Sync button — syncs properties from XML ──
+      // ── Sync button — opens sync modal ──
       document.getElementById('btn-start-sync').addEventListener('click', function() {
+        var modal = document.getElementById('modal-sync');
+        var progress = document.getElementById('sync-progress');
+        var result = document.getElementById('sync-result');
+        progress.style.display = 'none';
+        result.style.display = 'none';
+        document.getElementById('sync-go-btn').disabled = false;
+        document.getElementById('sync-go-btn').textContent = 'Sincronizar';
+        modal.classList.add('active');
+      });
+
+      document.getElementById('modal-sync').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('active');
+      });
+
+      document.getElementById('sync-go-btn').addEventListener('click', function() {
         var btn = this;
+        var url = document.getElementById('sync-url-input').value.trim();
+        if (!url) return;
+
         btn.disabled = true;
         btn.textContent = 'Sincronizando...';
+
+        var progress = document.getElementById('sync-progress');
+        var bar = document.getElementById('sync-bar');
+        var percent = document.getElementById('sync-percent');
+        var step = document.getElementById('sync-step');
+        var result = document.getElementById('sync-result');
+
+        progress.style.display = 'block';
+        result.style.display = 'none';
+
+        // Animate progress bar while waiting
+        bar.style.width = '10%'; percent.textContent = '10%';
+        step.textContent = 'Descargando XML del servidor...';
+
+        setTimeout(function() {
+          bar.style.width = '30%'; percent.textContent = '30%';
+          step.textContent = 'Parseando propiedades del XML...';
+        }, 500);
+
+        setTimeout(function() {
+          bar.style.width = '50%'; percent.textContent = '50%';
+          step.textContent = 'Eliminando propiedades anteriores...';
+        }, 1200);
+
+        setTimeout(function() {
+          bar.style.width = '70%'; percent.textContent = '70%';
+          step.textContent = 'Subiendo propiedades a Supabase...';
+        }, 2000);
+
         fetch('/chatbot/api/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
+          body: JSON.stringify({ url: url })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          if (data.ok) {
-            btn.textContent = data.total_properties + ' propiedades cargadas';
-            setTimeout(function() { btn.textContent = 'Sincronizar'; btn.disabled = false; }, 3000);
+          bar.style.width = '100%'; percent.textContent = '100%';
+
+          if (data.ok || data.total_properties) {
+            step.textContent = 'Completado';
+            result.style.display = 'block';
+            result.style.background = '#f0fdf4';
+            result.style.border = '1px solid #bbf7d0';
+            result.innerHTML =
+              '<div style="font-size:14px;font-weight:600;color:#15803d;margin-bottom:4px;">Sincronizacion completada</div>' +
+              '<div style="font-size:13px;color:#166534;">' + data.total_properties + ' propiedades cargadas correctamente.</div>' +
+              '<div style="font-size:11px;color:#6b7280;margin-top:6px;">' + new Date().toLocaleString('es-ES') + '</div>';
+            btn.textContent = 'Listo';
           } else {
-            btn.textContent = 'Error: ' + (data.error || 'desconocido');
-            setTimeout(function() { btn.textContent = 'Sincronizar'; btn.disabled = false; }, 3000);
+            step.textContent = 'Error';
+            result.style.display = 'block';
+            result.style.background = '#fef2f2';
+            result.style.border = '1px solid #fecaca';
+            result.innerHTML =
+              '<div style="font-size:14px;font-weight:600;color:#dc2626;">Error</div>' +
+              '<div style="font-size:13px;color:#991b1b;">' + (data.error || 'Error desconocido') + '</div>';
+            btn.disabled = false;
+            btn.textContent = 'Reintentar';
           }
         })
-        .catch(function() {
-          btn.textContent = 'Error de conexion';
-          setTimeout(function() { btn.textContent = 'Sincronizar'; btn.disabled = false; }, 3000);
+        .catch(function(err) {
+          bar.style.width = '100%';
+          step.textContent = 'Error de conexion';
+          result.style.display = 'block';
+          result.style.background = '#fef2f2';
+          result.style.border = '1px solid #fecaca';
+          result.innerHTML =
+            '<div style="font-size:14px;font-weight:600;color:#dc2626;">Error de conexion</div>' +
+            '<div style="font-size:13px;color:#991b1b;">No se pudo conectar con el servidor.</div>';
+          btn.disabled = false;
+          btn.textContent = 'Reintentar';
         });
       });
 

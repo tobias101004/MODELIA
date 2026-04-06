@@ -1,18 +1,18 @@
 """
 property_sync.py
-Fetches the Apinmo XML feed, parses properties, and caches them as JSON.
+Fetches the Apinmo XML feed, parses properties, and stores them in Supabase.
 """
 
-import json
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from pathlib import Path
 
 import requests
+from supabase import create_client
 
-DATA_DIR = Path(__file__).parent / "data"
-PROPERTIES_FILE = DATA_DIR / "properties.json"
-SYNC_META_FILE = DATA_DIR / "sync_meta.json"
+SUPABASE_URL = "https://pntipdspiivffvxfyshg.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBudGlwZHNwaWl2ZmZ2eGZ5c2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTg5NzYsImV4cCI6MjA4NzM3NDk3Nn0.2n0YukribUPyIcaWcercFEzpStq-VhQTzFpE69Pnv2M"
+
+_client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 DEFAULT_XML_URL = "https://procesos.apinmo.com/xml/v2/L5iw2DpX/2934-web.xml"
 
@@ -49,7 +49,6 @@ OPERATION_MAP = {
 
 
 def _text(el, tag: str) -> str:
-    """Get text content of a child element, or empty string."""
     child = el.find(tag)
     if child is not None and child.text:
         return child.text.strip()
@@ -57,7 +56,6 @@ def _text(el, tag: str) -> str:
 
 
 def _float(el, tag: str) -> float:
-    """Get float value of a child element, or 0."""
     val = _text(el, tag)
     try:
         return float(val)
@@ -66,7 +64,6 @@ def _float(el, tag: str) -> float:
 
 
 def _int(el, tag: str) -> int:
-    """Get int value of a child element, or 0."""
     val = _text(el, tag)
     try:
         return int(float(val))
@@ -75,7 +72,6 @@ def _int(el, tag: str) -> int:
 
 
 def _extract_features(el) -> list[str]:
-    """Extract human-readable feature list from boolean fields."""
     features = []
     for field, label in FEATURE_MAP.items():
         if _text(el, field) == "1":
@@ -84,11 +80,9 @@ def _extract_features(el) -> list[str]:
 
 
 def _extract_photos(el) -> list[str]:
-    """Extract photo URLs from foto1-foto37 fields."""
     photos = []
     for i in range(1, 38):
-        tag = f"foto{i}"
-        url = _text(el, tag)
+        url = _text(el, f"foto{i}")
         if url and url.startswith("http"):
             photos.append(url)
     return photos
@@ -110,9 +104,17 @@ def parse_property(el) -> dict:
         "title_es": _text(el, "titulo1"),
         "title_en": _text(el, "titulo2"),
         "title_de": _text(el, "titulo3"),
+        "title_fr": _text(el, "titulo4"),
+        "title_nl": _text(el, "titulo5"),
+        "title_no": _text(el, "titulo6"),
+        "title_sv": _text(el, "titulo9"),
         "description_es": _text(el, "descrip1"),
         "description_en": _text(el, "descrip2"),
         "description_de": _text(el, "descrip3"),
+        "description_fr": _text(el, "descrip4"),
+        "description_nl": _text(el, "descrip5"),
+        "description_no": _text(el, "descrip6"),
+        "description_sv": _text(el, "descrip9"),
         "type": _text(el, "tipo_ofer"),
         "operation": operation,
         "price": price,
@@ -145,26 +147,19 @@ def parse_property(el) -> dict:
         "exclusive": _text(el, "exclu") == "1",
         "active": _text(el, "estadoficha") == "1",
         "distance_to_sea": _int(el, "distmar"),
+        "synced_at": datetime.now().isoformat(),
     }
 
 
 def sync_from_url(url: str = DEFAULT_XML_URL) -> dict:
-    """Fetch XML from URL, parse all properties, save to JSON."""
+    """Fetch XML from URL, parse properties, replace all in Supabase."""
     response = requests.get(url, timeout=30)
     response.raise_for_status()
     return _sync_xml_content(response.content, source=url)
 
 
-def sync_from_file(xml_path: str) -> dict:
-    """Parse XML from a local file, save properties to JSON."""
-    content = Path(xml_path).read_bytes()
-    return _sync_xml_content(content, source=str(xml_path))
-
-
 def _sync_xml_content(xml_bytes: bytes, source: str) -> dict:
-    """Parse XML content and save properties."""
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-
+    """Parse XML and replace all properties in Supabase."""
     root = ET.fromstring(xml_bytes)
     properties = []
     for prop_el in root.findall("propiedad"):
@@ -172,34 +167,43 @@ def _sync_xml_content(xml_bytes: bytes, source: str) -> dict:
         if prop["active"] and prop["ref"]:
             properties.append(prop)
 
-    with open(PROPERTIES_FILE, "w", encoding="utf-8") as f:
-        json.dump(properties, f, ensure_ascii=False, indent=2)
+    # Delete all existing properties
+    _client.table("properties").delete().neq("ref", "").execute()
 
-    meta = {
+    # Insert all new properties in batches of 50
+    for i in range(0, len(properties), 50):
+        batch = properties[i:i + 50]
+        _client.table("properties").insert(batch).execute()
+
+    return {
         "last_sync": datetime.now().isoformat(),
         "source": source,
         "total_properties": len(properties),
     }
-    with open(SYNC_META_FILE, "w", encoding="utf-8") as f:
-        json.dump(meta, f, ensure_ascii=False, indent=2)
-
-    return meta
 
 
 def load_properties() -> list[dict]:
-    """Load cached properties from JSON. Returns empty list if not synced yet."""
-    if not PROPERTIES_FILE.exists():
-        return []
-    with open(PROPERTIES_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    """Load all active properties from Supabase."""
+    result = _client.table("properties").select("*").eq("active", True).execute()
+    return result.data
 
 
 def load_sync_meta() -> dict | None:
-    """Load sync metadata (last sync time, count, etc)."""
-    if not SYNC_META_FILE.exists():
-        return None
-    with open(SYNC_META_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    """Get sync status from the most recently synced property."""
+    result = (
+        _client.table("properties")
+        .select("synced_at")
+        .order("synced_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if result.data:
+        count = _client.table("properties").select("ref", count="exact").execute()
+        return {
+            "last_sync": result.data[0]["synced_at"],
+            "total_properties": count.count,
+        }
+    return None
 
 
 def search_properties(
@@ -211,20 +215,32 @@ def search_properties(
     price_min: float = 0,
     features: list[str] | None = None,
 ) -> list[dict]:
-    """Search cached properties with structured filters."""
-    properties = load_properties()
-    results = []
+    """Search properties in Supabase with filters."""
+    query = _client.table("properties").select("*").eq("active", True)
 
+    if operation:
+        query = query.eq("operation", operation.lower())
+
+    if bedrooms_min:
+        query = query.gte("bedrooms", bedrooms_min)
+
+    if price_max:
+        query = query.lte("price", price_max)
+
+    if price_min:
+        query = query.gte("price", price_min)
+
+    result = query.execute()
+    properties = result.data
+
+    # Client-side filtering for fuzzy matches (type, location, features)
+    filtered = []
     for p in properties:
-        if operation and operation.lower() not in p["operation"].lower():
-            continue
-
         if property_type:
             pt = property_type.lower()
-            if (pt not in p["type"].lower()
-                    and pt not in p["title_es"].lower()
-                    and pt not in p["title_en"].lower()):
-                # Common aliases
+            type_lower = (p.get("type") or "").lower()
+            title_lower = (p.get("title_es") or "").lower()
+            if pt not in type_lower and pt not in title_lower:
                 aliases = {
                     "apartamento": ["apartamento", "piso", "estudio", "apartment", "flat"],
                     "apartment": ["apartamento", "piso", "estudio", "apartment", "flat"],
@@ -238,37 +254,24 @@ def search_properties(
                 }
                 matched = False
                 for alias_list in aliases.values():
-                    if pt in alias_list:
-                        if any(a in p["type"].lower() for a in alias_list):
-                            matched = True
-                            break
+                    if pt in alias_list and any(a in type_lower for a in alias_list):
+                        matched = True
+                        break
                 if not matched:
                     continue
 
         if location:
             loc = location.lower()
-            if (loc not in p["city"].lower()
-                    and loc not in p["zone"].lower()
-                    and loc not in p["province"].lower()):
+            if (loc not in (p.get("city") or "").lower()
+                    and loc not in (p.get("zone") or "").lower()
+                    and loc not in (p.get("province") or "").lower()):
                 continue
-
-        if bedrooms_min and p["bedrooms"] < bedrooms_min:
-            continue
-
-        if price_max and p["price"] > price_max:
-            continue
-
-        if price_min and p["price"] < price_min:
-            continue
 
         if features:
-            p_features_lower = [f.lower() for f in p["features"]]
-            if not all(
-                any(req.lower() in pf for pf in p_features_lower)
-                for req in features
-            ):
+            p_features = [f.lower() for f in (p.get("features") or [])]
+            if not all(any(req.lower() in pf for pf in p_features) for req in features):
                 continue
 
-        results.append(p)
+        filtered.append(p)
 
-    return results
+    return filtered

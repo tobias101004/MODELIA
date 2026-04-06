@@ -1,57 +1,17 @@
 """
 database.py
-SQLite storage for leads and chat logs.
+Supabase storage for leads and chat logs.
 """
 
-import sqlite3
 import uuid
 from datetime import datetime
-from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "data" / "chatbot.db"
+from supabase import create_client
 
+SUPABASE_URL = "https://pntipdspiivffvxfyshg.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBudGlwZHNwaWl2ZmZ2eGZ5c2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTg5NzYsImV4cCI6MjA4NzM3NDk3Nn0.2n0YukribUPyIcaWcercFEzpStq-VhQTzFpE69Pnv2M"
 
-def _get_conn() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    return conn
-
-
-def init_db():
-    """Create tables if they don't exist."""
-    conn = _get_conn()
-    conn.executescript("""
-        CREATE TABLE IF NOT EXISTS leads (
-            id TEXT PRIMARY KEY,
-            chat_id TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            name TEXT DEFAULT '',
-            email TEXT DEFAULT '',
-            phone TEXT DEFAULT '',
-            intent TEXT DEFAULT '',
-            operation TEXT DEFAULT '',
-            property_type TEXT DEFAULT '',
-            location TEXT DEFAULT '',
-            bedrooms INTEGER DEFAULT 0,
-            budget REAL DEFAULT 0,
-            matched_refs TEXT DEFAULT '',
-            summary TEXT DEFAULT ''
-        );
-
-        CREATE TABLE IF NOT EXISTS chat_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id TEXT NOT NULL,
-            timestamp TEXT NOT NULL,
-            role TEXT NOT NULL,
-            content TEXT NOT NULL
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_chat_logs_chat_id ON chat_logs(chat_id);
-        CREATE INDEX IF NOT EXISTS idx_leads_chat_id ON leads(chat_id);
-    """)
-    conn.close()
+_client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 def save_lead(
@@ -70,52 +30,53 @@ def save_lead(
 ) -> str:
     """Save a lead and return its ID."""
     lead_id = str(uuid.uuid4())
-    conn = _get_conn()
-    conn.execute(
-        """INSERT INTO leads
-           (id, chat_id, created_at, name, email, phone, intent, operation,
-            property_type, location, bedrooms, budget, matched_refs, summary)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (lead_id, chat_id, datetime.now().isoformat(), name, email, phone,
-         intent, operation, property_type, location, bedrooms, budget,
-         matched_refs, summary),
-    )
-    conn.commit()
-    conn.close()
+    _client.table("leads").insert({
+        "id": lead_id,
+        "chat_id": chat_id,
+        "created_at": datetime.now().isoformat(),
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "intent": intent,
+        "operation": operation,
+        "property_type": property_type,
+        "location": location,
+        "bedrooms": bedrooms,
+        "budget": budget,
+        "matched_refs": matched_refs,
+        "summary": summary,
+    }).execute()
     return lead_id
 
 
 def log_message(chat_id: str, role: str, content: str):
     """Append a message to the chat log."""
-    conn = _get_conn()
-    conn.execute(
-        "INSERT INTO chat_logs (chat_id, timestamp, role, content) VALUES (?, ?, ?, ?)",
-        (chat_id, datetime.now().isoformat(), role, content),
-    )
-    conn.commit()
-    conn.close()
+    _client.table("chat_logs").insert({
+        "chat_id": chat_id,
+        "timestamp": datetime.now().isoformat(),
+        "role": role,
+        "content": content,
+    }).execute()
 
 
 def get_chat_history(chat_id: str) -> list[dict]:
     """Get all messages for a chat session."""
-    conn = _get_conn()
-    rows = conn.execute(
-        "SELECT role, content FROM chat_logs WHERE chat_id = ? ORDER BY id",
-        (chat_id,),
-    ).fetchall()
-    conn.close()
-    return [{"role": r["role"], "content": r["content"]} for r in rows]
+    result = (
+        _client.table("chat_logs")
+        .select("role, content")
+        .eq("chat_id", chat_id)
+        .order("id")
+        .execute()
+    )
+    return result.data
 
 
 def get_all_leads() -> list[dict]:
     """Get all leads, most recent first."""
-    conn = _get_conn()
-    rows = conn.execute(
-        "SELECT * FROM leads ORDER BY created_at DESC"
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
-
-
-# Initialize on import
-init_db()
+    result = (
+        _client.table("leads")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return result.data
