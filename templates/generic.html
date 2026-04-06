@@ -1949,6 +1949,34 @@
           <div class="model-card-subtitle">Asistente IA para clientes: busqueda de propiedades, captura de leads y atencion 24/7</div>
           <button class="btn-primary" id="btn-start-chatbot">Abrir Chat</button>
         </div>
+        <!-- Consultar Leads Bot -->
+        <div class="model-card">
+          <div class="model-card-number">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div class="model-card-title">Consultar Leads Bot</div>
+          <div class="model-card-subtitle">Panel en tiempo real con todos los leads capturados por el chatbot. Exporta a CSV.</div>
+          <button class="btn-primary" id="btn-start-leads">Ver Leads</button>
+        </div>
+        <!-- Sincronizar Propiedades Bot -->
+        <div class="model-card">
+          <div class="model-card-number">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/>
+              <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/>
+            </svg>
+          </div>
+          <div class="model-card-title">Sincronizar Propiedades</div>
+          <div class="model-card-subtitle">Actualiza las propiedades del chatbot con el XML de Apinmo. Ejecutar cada vez que se exporte.</div>
+          <button class="btn-primary" id="btn-start-sync">Sincronizar</button>
+        </div>
       </div>
       <button class="carousel-arrow carousel-arrow-right" id="carousel-right">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2995,6 +3023,37 @@
       // ── Chatbot button — opens chatbot page ──
       document.getElementById('btn-start-chatbot').addEventListener('click', function() {
         window.open('/chatbot/', '_blank');
+      });
+
+      // ── Leads button — opens leads dashboard ──
+      document.getElementById('btn-start-leads').addEventListener('click', function() {
+        window.open('/chatbot/leads', '_blank');
+      });
+
+      // ── Sync button — syncs properties from XML ──
+      document.getElementById('btn-start-sync').addEventListener('click', function() {
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Sincronizando...';
+        fetch('/chatbot/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.ok) {
+            btn.textContent = data.total_properties + ' propiedades cargadas';
+            setTimeout(function() { btn.textContent = 'Sincronizar'; btn.disabled = false; }, 3000);
+          } else {
+            btn.textContent = 'Error: ' + (data.error || 'desconocido');
+            setTimeout(function() { btn.textContent = 'Sincronizar'; btn.disabled = false; }, 3000);
+          }
+        })
+        .catch(function() {
+          btn.textContent = 'Error de conexion';
+          setTimeout(function() { btn.textContent = 'Sincronizar'; btn.disabled = false; }, 3000);
+        });
       });
 
       // ── Carousel arrows ───────────────────────────────────

@@ -4,6 +4,8 @@ Flask Blueprint for the Cárdenas Real Estate chatbot.
 Can run standalone or be mounted into the main MODELIA app.
 """
 
+import csv
+import io
 import json
 import logging
 import os
@@ -129,13 +131,44 @@ def api_sync_status():
     })
 
 
-# ── Leads API ─────────────────────────────────────────────────────────────────
+# ── Leads ─────────────────────────────────────────────────────────────────────
+
+@chatbot_bp.route("/leads")
+def leads_page():
+    return render_template("leads.html")
+
 
 @chatbot_bp.route("/api/leads")
 def api_leads():
     """List all captured leads."""
     leads = database.get_all_leads()
     return jsonify({"leads": leads, "total": len(leads)})
+
+
+@chatbot_bp.route("/api/leads/csv")
+def api_leads_csv():
+    """Export leads as CSV download."""
+    leads = database.get_all_leads()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Fecha", "Nombre", "Email", "Telefono", "Intencion",
+        "Operacion", "Tipo", "Zona", "Dormitorios", "Presupuesto",
+        "Refs mostradas", "Resumen",
+    ])
+    for l in leads:
+        writer.writerow([
+            l.get("created_at", ""), l.get("name", ""), l.get("email", ""),
+            l.get("phone", ""), l.get("intent", ""), l.get("operation", ""),
+            l.get("property_type", ""), l.get("location", ""),
+            l.get("bedrooms", ""), l.get("budget", ""),
+            l.get("matched_refs", ""), l.get("summary", ""),
+        ])
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=leads_cardenas.csv"},
+    )
 
 
 # ── Standalone runner ─────────────────────────────────────────────────────────
