@@ -49,6 +49,11 @@ from hoja_extractor import (                                   # noqa: E402
 app = Flask(__name__, template_folder=str(MODELIA_DIR / "templates"))
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB max upload
 
+# Register chatbot blueprint
+sys.path.insert(0, str(MODELIA_DIR))
+from chatbot.chatbot_app import chatbot_bp  # noqa: E402
+app.register_blueprint(chatbot_bp)
+
 # Startup debug — shows in Railway deploy logs
 import logging
 logging.basicConfig(level=logging.INFO)
