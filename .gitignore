@@ -5,3 +5,4 @@ __pycache__/
 .DS_Store
 Output/
 Input/datos_211_*.json
+config/key.txt

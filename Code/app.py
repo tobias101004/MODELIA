@@ -14,6 +14,8 @@ import json
 import os
 import sys
 import tempfile
+import time
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -45,13 +47,56 @@ from hoja_extractor import (                                   # noqa: E402
 # ── App Flask ─────────────────────────────────────────────────────────────────
 
 app = Flask(__name__, template_folder=str(MODELIA_DIR / "templates"))
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB max upload
 
 # Startup debug — shows in Railway deploy logs
 import logging
 logging.basicConfig(level=logging.INFO)
 _key = os.environ.get("OPENAI_API_KEY", "")
-logging.info(f"[MODELIA] OPENAI_API_KEY present: {bool(_key.strip())}, length: {len(_key)}")
-logging.info(f"[MODELIA] ENV keys with KEY/OPENAI: {[k for k in os.environ if 'KEY' in k or 'OPENAI' in k]}")
+logging.info(f"[MODELIA] OPENAI_API_KEY present: {bool(_key.strip())}")
+
+# ── Security: Rate limiter & daily budget ─────────────────────────────────────
+
+MAX_PDF_PAGES = 30          # Max pages per PDF to prevent runaway costs
+MAX_REQUESTS_PER_MINUTE = 5 # Per-IP rate limit
+MAX_DAILY_API_CALLS = 200   # Daily cap on OpenAI API calls
+
+_rate_lock = threading.Lock()
+_ip_requests: dict[str, list[float]] = {}   # ip -> list of timestamps
+_daily_api_calls = 0
+_daily_api_reset = time.time()
+
+
+def _check_rate_limit() -> bool:
+    """Return True if the request should be allowed, False if rate-limited."""
+    ip = request.remote_addr or "unknown"
+    now = time.time()
+    with _rate_lock:
+        timestamps = _ip_requests.get(ip, [])
+        # Keep only last 60 seconds
+        timestamps = [t for t in timestamps if now - t < 60]
+        if len(timestamps) >= MAX_REQUESTS_PER_MINUTE:
+            _ip_requests[ip] = timestamps
+            return False
+        timestamps.append(now)
+        _ip_requests[ip] = timestamps
+        return True
+
+
+def _track_api_call(count: int = 1) -> bool:
+    """Track an API call. Returns False if daily budget exceeded."""
+    global _daily_api_calls, _daily_api_reset
+    now = time.time()
+    with _rate_lock:
+        # Reset daily counter every 24h
+        if now - _daily_api_reset > 86400:
+            _daily_api_calls = 0
+            _daily_api_reset = now
+        if _daily_api_calls + count > MAX_DAILY_API_CALLS:
+            return False
+        _daily_api_calls += count
+        logging.info(f"[BUDGET] API calls today: {_daily_api_calls}/{MAX_DAILY_API_CALLS}")
+        return True
 
 
 @app.route("/")
@@ -59,19 +104,13 @@ def index():
     return render_template("generic.html")
 
 
-@app.route("/debug-env")
-def debug_env():
-    key = os.environ.get("OPENAI_API_KEY", "")
-    return jsonify({
-        "key_exists": bool(key.strip()),
-        "key_length": len(key),
-        "key_prefix": key[:10] + "..." if key else "(empty)",
-        "all_env_keys": [k for k in os.environ.keys() if "KEY" in k or "OPENAI" in k or "RAILWAY" in k],
-    })
-
-
 @app.route("/process", methods=["POST"])
 def process():
+    if not _check_rate_limit():
+        return jsonify({"error": "Demasiadas peticiones. Espera un momento."}), 429
+    if not _track_api_call(1):
+        return jsonify({"error": "Límite diario de uso alcanzado."}), 429
+
     # Validar que se recibe un PDF
     if "pdf" not in request.files:
         return jsonify({"error": "No se recibió ningún archivo PDF."}), 400
@@ -96,6 +135,8 @@ def process():
         pdf_file.save(tmp.name)
         tmp.close()
         pdf_path = Path(tmp.name)
+
+        logging.info(f"[AUDIT] /process called from IP: {request.remote_addr}")
 
         # Paso 1: Extraer texto del PDF
         texto = extraer_texto_pdf(pdf_path)
@@ -145,6 +186,11 @@ def process():
 
 @app.route("/comprobacion", methods=["POST"])
 def comprobacion():
+    if not _check_rate_limit():
+        return jsonify({"error": "Demasiadas peticiones. Espera un momento."}), 429
+    if not _track_api_call(3):
+        return jsonify({"error": "Límite diario de uso alcanzado."}), 429
+
     # Validar que se reciben los 3 PDFs
     for key in ("escritura", "modelo211", "modelo600"):
         if key not in request.files:
@@ -180,6 +226,8 @@ def comprobacion():
                 }), 422
             textos[key] = texto
 
+        logging.info(f"[AUDIT] /comprobacion called from IP: {request.remote_addr}")
+
         # 3 llamadas GPT-4o para extracción estructurada
         datos_escritura = extraer_datos_escritura(textos["escritura"], api_key)
         datos_211 = extraer_datos_211(textos["modelo211"], api_key)
@@ -207,6 +255,11 @@ def comprobacion():
 @app.route("/verify-hoja", methods=["POST"])
 def verify_hoja():
     """Receive a hoja de visita PDF + expected visit data, verify they match."""
+    if not _check_rate_limit():
+        return jsonify({"error": "Demasiadas peticiones. Espera un momento."}), 429
+    if not _track_api_call(1):
+        return jsonify({"error": "Límite diario de uso alcanzado."}), 429
+
     if "pdf" not in request.files:
         return jsonify({"error": "No se recibio ningun archivo PDF."}), 400
 
@@ -263,6 +316,9 @@ def verify_hojas_batch():
         - pdf: The multi-page PDF file
         - checks: JSON string with list of expected check data
     """
+    if not _check_rate_limit():
+        return jsonify({"error": "Demasiadas peticiones. Espera un momento."}), 429
+
     if "pdf" not in request.files:
         return jsonify({"error": "No se recibio ningun archivo PDF."}), 400
 
@@ -287,6 +343,23 @@ def verify_hojas_batch():
     try:
         pdf_file.save(tmp.name)
         tmp.close()
+
+        # Check page count BEFORE making expensive API calls
+        import fitz as _fitz
+        _doc = _fitz.open(tmp.name)
+        _page_count = len(_doc)
+        _doc.close()
+        if _page_count > MAX_PDF_PAGES:
+            return jsonify({
+                "error": f"El PDF tiene {_page_count} páginas. "
+                         f"Máximo permitido: {MAX_PDF_PAGES}."
+            }), 400
+
+        if not _track_api_call(_page_count):
+            return jsonify({"error": "Límite diario de uso alcanzado."}), 429
+
+        logging.info(f"[AUDIT] Processing batch PDF with {_page_count} pages "
+                     f"(IP: {request.remote_addr})")
 
         # Extract data from each page independently
         extractions = extraer_datos_hoja_por_pagina(Path(tmp.name), api_key)
