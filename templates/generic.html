@@ -1233,6 +1233,197 @@
     }
     #view-auditoria.visible { display: block; }
 
+    /* ── Chatbot view ──────────────────────────────────── */
+    #view-chatbot {
+      display: none;
+      height: calc(100vh - 72px);
+      flex-direction: column;
+    }
+    #view-chatbot.visible { display: flex; }
+
+    .chat-toolbar {
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--gray-200);
+      background: var(--white);
+    }
+    .chat-toolbar .btn-back-inline {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--gray-600);
+      padding: 6px 0;
+    }
+    .chat-toolbar .btn-back-inline:hover { color: var(--blue); }
+    .chat-toolbar .chat-title {
+      font-size: 15px; font-weight: 700; color: var(--gray-800);
+    }
+    .chat-toolbar-right {
+      margin-left: auto; display: flex; gap: 8px;
+    }
+    .chat-toolbar-btn {
+      padding: 5px 14px; border-radius: 6px; font-size: 12px;
+      font-weight: 600; cursor: pointer; border: 1px solid var(--gray-200);
+      background: var(--white); color: var(--gray-600);
+      transition: all 0.15s;
+    }
+    .chat-toolbar-btn:hover { background: var(--gray-50); color: var(--blue); border-color: var(--blue); }
+
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 20px 24px;
+      display: flex; flex-direction: column; gap: 14px;
+      background: var(--gray-bg);
+    }
+    .chat-msg { max-width: 70%; animation: chatFadeIn 0.25s ease; }
+    .chat-msg.user { align-self: flex-end; }
+    .chat-msg.assistant { align-self: flex-start; }
+    @keyframes chatFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .chat-bubble {
+      padding: 10px 14px; border-radius: 14px;
+      line-height: 1.5; font-size: 14px;
+      white-space: pre-wrap; word-wrap: break-word;
+    }
+    .chat-msg.user .chat-bubble {
+      background: var(--blue); color: var(--white);
+      border-bottom-right-radius: 4px;
+    }
+    .chat-msg.assistant .chat-bubble {
+      background: var(--white); color: var(--gray-800);
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .chat-typing { align-self: flex-start; display: none; }
+    .chat-typing.active { display: flex; }
+    .chat-typing-dots {
+      background: var(--white); padding: 10px 18px;
+      border-radius: 14px; border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex; gap: 5px; align-items: center;
+    }
+    .chat-typing-dots span {
+      width: 6px; height: 6px; background: var(--gray-400);
+      border-radius: 50%; animation: chatBounce 1.4s infinite;
+    }
+    .chat-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .chat-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes chatBounce {
+      0%,60%,100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+    .chat-welcome {
+      text-align: center; padding: 50px 20px; color: var(--gray-400);
+    }
+    .chat-welcome h2 { color: var(--blue); font-size: 18px; margin-bottom: 6px; }
+    .chat-welcome p { font-size: 13px; max-width: 380px; margin: 0 auto; }
+
+    .chat-prop-cards {
+      display: flex; gap: 12px; overflow-x: auto;
+      padding: 6px 0; max-width: 80%;
+    }
+    .chat-prop-card {
+      min-width: 240px; max-width: 260px; background: var(--white);
+      border-radius: 10px; overflow: hidden; flex-shrink: 0;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+    }
+    .chat-prop-card img { width: 100%; height: 140px; object-fit: cover; background: var(--gray-100); }
+    .chat-prop-card-body { padding: 10px; }
+    .chat-prop-card-body h4 {
+      font-size: 12px; font-weight: 600; margin-bottom: 3px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .chat-prop-card-body .chat-prop-price {
+      color: var(--blue); font-size: 16px; font-weight: 700; margin-bottom: 4px;
+    }
+    .chat-prop-card-body .chat-prop-meta { font-size: 11px; color: var(--gray-600); }
+    .chat-prop-card-body .chat-prop-ref { font-size: 10px; color: var(--gray-400); margin-top: 4px; }
+
+    .chat-input-area {
+      padding: 12px 24px; background: var(--white);
+      border-top: 1px solid var(--gray-200);
+      display: flex; gap: 10px; align-items: flex-end;
+    }
+    .chat-input-area textarea {
+      flex: 1; border: 1px solid var(--gray-200); border-radius: 10px;
+      padding: 10px 14px; font-size: 14px; font-family: inherit;
+      resize: none; max-height: 100px; line-height: 1.4; outline: none;
+    }
+    .chat-input-area textarea:focus { border-color: var(--blue); }
+    .chat-send-btn {
+      width: 40px; height: 40px; background: var(--blue); color: var(--white);
+      border: none; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s;
+    }
+    .chat-send-btn:hover { background: var(--blue-light); }
+    .chat-send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .chat-send-btn svg { width: 18px; height: 18px; }
+
+    /* ── Leads view ────────────────────────────────────── */
+    #view-leads {
+      display: none;
+      padding: 60px 24px 40px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    #view-leads.visible { display: block; }
+
+    .leads-stats { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+    .leads-stat {
+      background: var(--white); border-radius: var(--radius-md);
+      padding: 18px 22px; box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+      flex: 1; min-width: 130px;
+    }
+    .leads-stat .leads-stat-label {
+      font-size: 11px; color: var(--gray-400); text-transform: uppercase;
+      letter-spacing: 0.05em; margin-bottom: 4px;
+    }
+    .leads-stat .leads-stat-value { font-size: 26px; font-weight: 700; color: var(--blue); }
+    .leads-table-wrap {
+      background: var(--white); border-radius: var(--radius-md);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.05); overflow: hidden;
+    }
+    .leads-table-header {
+      padding: 14px 18px; border-bottom: 1px solid var(--gray-200);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .leads-table-header h2 { font-size: 14px; font-weight: 600; }
+    .leads-table-header span { font-size: 11px; color: var(--gray-400); }
+    .leads-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .leads-table thead th {
+      text-align: left; padding: 10px 14px; font-weight: 600;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--gray-400); border-bottom: 2px solid var(--gray-200);
+    }
+    .leads-table tbody td {
+      padding: 10px 14px; border-bottom: 1px solid var(--gray-100);
+      vertical-align: top;
+    }
+    .leads-table tbody tr:hover { background: var(--gray-50); }
+    .leads-badge {
+      display: inline-block; padding: 2px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+    }
+    .leads-badge-comprar { background: #dbeafe; color: #1e40af; }
+    .leads-badge-vender { background: #fef3c7; color: #92400e; }
+    .leads-badge-alquilar { background: #d1fae5; color: #065f46; }
+    .leads-badge-info { background: #f3f4f6; color: #4b5563; }
+    .leads-empty { text-align: center; padding: 50px 20px; color: var(--gray-400); }
+    .leads-empty h3 { color: var(--gray-800); font-size: 15px; margin-bottom: 6px; }
+
+    @media (max-width: 600px) {
+      .chat-msg { max-width: 88%; }
+      .chat-prop-cards { max-width: 92%; }
+      .leads-stats { flex-direction: column; }
+      .leads-table-wrap { overflow-x: auto; }
+      .leads-table { min-width: 600px; }
+    }
+
     .audit-header {
       display: flex;
       align-items: center;
@@ -2409,6 +2600,63 @@
     </div>
   </div>
 
+  <!-- Chatbot View -->
+  <div id="view-chatbot">
+    <div class="chat-toolbar">
+      <button class="btn-back-inline" id="btn-back-dashboard-chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver
+      </button>
+      <span class="chat-title">Chatbot Inmobiliario</span>
+      <div class="chat-toolbar-right">
+        <button class="chat-toolbar-btn" id="chat-btn-sync" title="Sincronizar propiedades">Sync</button>
+        <button class="chat-toolbar-btn" id="chat-btn-leads" title="Ver leads">Leads</button>
+      </div>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-welcome" id="chat-welcome">
+        <h2>Cardenas Real Estate</h2>
+        <p>Soy el asistente virtual. Preguntame sobre propiedades en Gran Canaria, servicios, o lo que necesites.</p>
+      </div>
+      <div class="chat-typing" id="chat-typing">
+        <div class="chat-typing-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <textarea id="chat-input" rows="1" placeholder="Escribe tu mensaje..."></textarea>
+      <button class="chat-send-btn" id="chat-send-btn" title="Enviar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Leads View -->
+  <div id="view-leads">
+    <button class="btn-back-dashboard" id="btn-back-dashboard-leads">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Volver al dashboard
+    </button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h1 style="font-size:20px;font-weight:700;">Leads del Chatbot</h1>
+      <a href="/chatbot/api/leads/csv" class="chat-toolbar-btn" style="text-decoration:none;">Exportar CSV</a>
+    </div>
+    <div class="leads-stats">
+      <div class="leads-stat"><div class="leads-stat-label">Total</div><div class="leads-stat-value" id="leads-stat-total">-</div></div>
+      <div class="leads-stat"><div class="leads-stat-label">Hoy</div><div class="leads-stat-value" id="leads-stat-today">-</div></div>
+      <div class="leads-stat"><div class="leads-stat-label">Compradores</div><div class="leads-stat-value" id="leads-stat-buy">-</div></div>
+      <div class="leads-stat"><div class="leads-stat-label">Vendedores</div><div class="leads-stat-value" id="leads-stat-sell">-</div></div>
+    </div>
+    <div class="leads-table-wrap">
+      <div class="leads-table-header">
+        <h2>Leads capturados</h2>
+        <span>Se actualiza cada 15 segundos</span>
+      </div>
+      <div id="leads-table-body"><div class="leads-empty">Cargando...</div></div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="app-footer" id="app-footer">
     <div class="footer-links">
@@ -2913,13 +3161,18 @@
       var modalAccountEmail  = document.getElementById('modal-account-email');
       var modalAccountLogout = document.getElementById('modal-account-logout');
 
-      function showDashboard() {
+      function hideAllViews() {
         viewAccountEl.classList.remove('visible');
         appMainContentEl.classList.remove('visible');
-        var vc = document.getElementById('view-comprobacion');
-        if (vc) vc.classList.remove('visible');
-        var va = document.getElementById('view-auditoria');
-        if (va) va.classList.remove('visible');
+        var ids = ['view-comprobacion','view-auditoria','view-chatbot','view-leads'];
+        ids.forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.classList.remove('visible');
+        });
+      }
+
+      function showDashboard() {
+        hideAllViews();
         viewDashboardEl.classList.add('visible');
       }
 
@@ -3054,14 +3307,45 @@
         window.open('https://t.me/facturascardenasbot', '_blank');
       });
 
-      // ── Chatbot button — opens chatbot page ──
+      // ── Chatbot button — show chat view ──
       document.getElementById('btn-start-chatbot').addEventListener('click', function() {
-        window.open('/chatbot/', '_blank');
+        hideAllViews();
+        viewDashboardEl.classList.remove('visible');
+        document.getElementById('view-chatbot').classList.add('visible');
+        document.getElementById('chat-input').focus();
       });
 
-      // ── Leads button — opens leads dashboard ──
+      document.getElementById('btn-back-dashboard-chat').addEventListener('click', showDashboard);
+
+      // ── Leads button — show leads view ──
       document.getElementById('btn-start-leads').addEventListener('click', function() {
-        window.open('/chatbot/leads', '_blank');
+        hideAllViews();
+        viewDashboardEl.classList.remove('visible');
+        document.getElementById('view-leads').classList.add('visible');
+        loadLeadsView();
+      });
+
+      document.getElementById('btn-back-dashboard-leads').addEventListener('click', showDashboard);
+
+      // ── Chat toolbar buttons ──
+      document.getElementById('chat-btn-leads').addEventListener('click', function() {
+        hideAllViews();
+        viewDashboardEl.classList.remove('visible');
+        document.getElementById('view-leads').classList.add('visible');
+        loadLeadsView();
+      });
+
+      document.getElementById('chat-btn-sync').addEventListener('click', function() {
+        document.getElementById('modal-sync').classList.add('active');
+        // load sync status into modal
+        var statusEl = document.getElementById('sync-status-text');
+        if (statusEl) {
+          fetch('/chatbot/api/sync/status').then(function(r){return r.json();}).then(function(d){
+            if (d.synced && d.meta) {
+              statusEl.innerHTML = 'Ultima sync: ' + new Date(d.meta.last_sync).toLocaleString('es-ES') + ' — ' + d.property_count + ' propiedades';
+            }
+          }).catch(function(){});
+        }
       });
 
       // ── Sync button — opens sync modal ──
@@ -4617,6 +4901,203 @@
       }
 
     })();
+  </script>
+
+  <!-- Chatbot & Leads Logic -->
+  <script>
+  (function() {
+    var messagesEl = document.getElementById('chat-messages');
+    var typingEl = document.getElementById('chat-typing');
+    var welcomeEl = document.getElementById('chat-welcome');
+    var inputEl = document.getElementById('chat-input');
+    var sendBtn = document.getElementById('chat-send-btn');
+    var chatId = crypto.randomUUID();
+    var chatHistory = [];
+    var isStreaming = false;
+
+    inputEl.addEventListener('input', function() {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
+    });
+    inputEl.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
+    });
+    sendBtn.addEventListener('click', chatSend);
+
+    function chatScroll() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+    function chatEsc(t) {
+      if (!t) return '';
+      var d = document.createElement('div');
+      d.textContent = t;
+      return d.innerHTML;
+    }
+
+    function chatAddMsg(role, content) {
+      if (welcomeEl) welcomeEl.style.display = 'none';
+      var div = document.createElement('div');
+      div.className = 'chat-msg ' + role;
+      div.innerHTML = '<div class="chat-bubble">' + chatEsc(content) + '</div>';
+      messagesEl.insertBefore(div, typingEl);
+      chatScroll();
+      return div;
+    }
+
+    function chatAddProps(props) {
+      var w = document.createElement('div');
+      w.className = 'chat-msg assistant';
+      var html = '<div class="chat-prop-cards">';
+      for (var i = 0; i < props.length; i++) {
+        var p = props[i];
+        var pr = p.price ? p.price.toLocaleString('es-ES') + ' \u20ac' : 'Consultar';
+        html += '<div class="chat-prop-card">';
+        if (p.photo_main) html += '<img src="' + p.photo_main + '" loading="lazy">';
+        html += '<div class="chat-prop-card-body">' +
+          '<h4>' + chatEsc(p.title || p.type) + '</h4>' +
+          '<div class="chat-prop-price">' + pr + '</div>' +
+          '<div class="chat-prop-meta">' +
+            (p.bedrooms ? p.bedrooms + ' dorm. ' : '') +
+            (p.bathrooms ? p.bathrooms + ' ba\u00f1o' + (p.bathrooms>1?'s':'') + ' ' : '') +
+            (p.surface_built ? p.surface_built + ' m\u00b2' : '') +
+          '</div>' +
+          '<div class="chat-prop-meta">' + chatEsc(p.zone || p.city || '') + '</div>' +
+          '<div class="chat-prop-ref">REF: ' + chatEsc(p.ref) + '</div>' +
+          '</div></div>';
+      }
+      html += '</div>';
+      w.innerHTML = html;
+      messagesEl.insertBefore(w, typingEl);
+      chatScroll();
+    }
+
+    function chatSend() {
+      var text = inputEl.value.trim();
+      if (!text || isStreaming) return;
+      isStreaming = true;
+      sendBtn.disabled = true;
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+
+      chatAddMsg('user', text);
+      chatHistory.push({ role: 'user', content: text });
+      typingEl.classList.add('active');
+      chatScroll();
+
+      var assistantDiv = null;
+      var assistantText = '';
+
+      fetch('/chatbot/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, message: text, history: chatHistory.slice(0, -1) })
+      }).then(function(response) {
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+        typingEl.classList.remove('active');
+
+        function readChunk() {
+          reader.read().then(function(result) {
+            if (result.done) { finishChat(); return; }
+            buffer += decoder.decode(result.value, { stream: true });
+            var lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (var i = 0; i < lines.length; i++) {
+              if (lines[i].indexOf('data: ') !== 0) continue;
+              var js = lines[i].slice(6).trim();
+              if (!js) continue;
+              try {
+                var ev = JSON.parse(js);
+                if (ev.type === 'text') {
+                  if (!assistantDiv) assistantDiv = chatAddMsg('assistant', '');
+                  assistantText += ev.content;
+                  assistantDiv.querySelector('.chat-bubble').textContent = assistantText;
+                  chatScroll();
+                } else if (ev.type === 'properties') {
+                  chatAddProps(ev.data);
+                } else if (ev.type === 'done') {
+                  if (assistantText) chatHistory.push({ role: 'assistant', content: assistantText });
+                } else if (ev.type === 'error') {
+                  chatAddMsg('assistant', 'Lo siento, ha ocurrido un error. Int\u00e9ntalo de nuevo.');
+                }
+              } catch(e) {}
+            }
+            readChunk();
+          });
+        }
+        readChunk();
+      }).catch(function() {
+        typingEl.classList.remove('active');
+        chatAddMsg('assistant', 'No se pudo conectar con el servidor.');
+        finishChat();
+      });
+
+      function finishChat() {
+        isStreaming = false;
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    // ── Leads view logic ──
+    var leadsInterval = null;
+
+    window.loadLeadsView = function() {
+      if (leadsInterval) clearInterval(leadsInterval);
+      loadLeadsData();
+      leadsInterval = setInterval(loadLeadsData, 15000);
+    };
+
+    function isToday(iso) {
+      if (!iso) return false;
+      var d = new Date(iso), n = new Date();
+      return d.getDate()===n.getDate() && d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear();
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '-';
+      var d = new Date(iso);
+      return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    }
+
+    function badgeCls(intent) {
+      var m = { comprar:'leads-badge-comprar', vender:'leads-badge-vender', alquilar:'leads-badge-alquilar' };
+      return m[intent] || 'leads-badge-info';
+    }
+
+    function loadLeadsData() {
+      fetch('/chatbot/api/leads').then(function(r){return r.json();}).then(function(data) {
+        var leads = data.leads || [];
+        document.getElementById('leads-stat-total').textContent = leads.length;
+        document.getElementById('leads-stat-today').textContent = leads.filter(function(l){return isToday(l.created_at);}).length;
+        document.getElementById('leads-stat-buy').textContent = leads.filter(function(l){return l.intent==='comprar';}).length;
+        document.getElementById('leads-stat-sell').textContent = leads.filter(function(l){return l.intent==='vender';}).length;
+
+        var el = document.getElementById('leads-table-body');
+        if (leads.length === 0) {
+          el.innerHTML = '<div class="leads-empty"><h3>No hay leads todavia</h3><p>Cuando un cliente deje sus datos en el chatbot, apareceran aqui.</p></div>';
+          return;
+        }
+        var html = '<table class="leads-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Contacto</th><th>Intencion</th><th>Zona</th><th>Presupuesto</th><th>Resumen</th></tr></thead><tbody>';
+        for (var i = 0; i < leads.length; i++) {
+          var l = leads[i];
+          var budget = l.budget ? Number(l.budget).toLocaleString('es-ES') + ' \u20ac' : '-';
+          var contact = l.email || l.phone || '-';
+          html += '<tr><td style="white-space:nowrap">' + fmtDate(l.created_at) + '</td>' +
+            '<td><strong>' + chatEsc(l.name) + '</strong></td>' +
+            '<td>' + chatEsc(contact) + '</td>' +
+            '<td><span class="leads-badge ' + badgeCls(l.intent) + '">' + chatEsc(l.intent||'info') + '</span></td>' +
+            '<td>' + chatEsc(l.location||'-') + '</td>' +
+            '<td>' + budget + '</td>' +
+            '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + chatEsc(l.summary||'-') + '</td></tr>';
+        }
+        html += '</tbody></table>';
+        el.innerHTML = html;
+      }).catch(function() {
+        document.getElementById('leads-table-body').innerHTML = '<div class="leads-empty"><p>Error al cargar leads</p></div>';
+      });
+    }
+  })();
   </script>
 </body>
 </html>
