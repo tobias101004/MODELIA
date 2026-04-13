@@ -4664,6 +4664,7 @@
         var docName = 'doc_' + Date.now() + '.pdf';
         var path = currentSessionId + '/' + docName;
         var matchCount = 0;
+        var batchData = null;
 
         // 1. Send to batch verification endpoint first (only save file if matches found)
         var checksArr = Object.values(currentChecksMap).filter(function(c) {
@@ -4691,6 +4692,7 @@
           .then(function(resp) { return resp.json(); })
           .then(function(data) {
             if (data.error) throw new Error(data.error);
+            batchData = data;
 
             var results = data.results || {};
             var updates = [];
@@ -4765,10 +4767,10 @@
                 '</div>';
               } else {
                 var debugHtml = '';
-                if (data.extractions_debug && data.extractions_debug.length > 0) {
+                if (batchData && batchData.extractions_debug && batchData.extractions_debug.length > 0) {
                   debugHtml = '<div style="margin-top:8px;font-size:11px;font-weight:400;color:#7f1d1d;">' +
-                    '<div style="font-weight:600;margin-bottom:4px;">Datos extraidos del PDF (' + data.extractions_debug.length + ' paginas):</div>';
-                  data.extractions_debug.forEach(function(ext) {
+                    '<div style="font-weight:600;margin-bottom:4px;">Datos extraidos del PDF (' + batchData.extractions_debug.length + ' paginas):</div>';
+                  batchData.extractions_debug.forEach(function(ext) {
                     debugHtml += '<div>Pag ' + ext.page + ': Ref=' + (ext.property_ref || '?') +
                       ', Agente=' + (ext.agent_name || '?') +
                       ', Cliente=' + (ext.client_name || '?') +

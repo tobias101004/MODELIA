@@ -435,8 +435,12 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
     else:
         identified = False
 
-    # Full verification: identified AND every compared field matches
-    all_fields_ok = all(f["match"] for f in results.values())
+    # Full verification: identified AND every compared field matches.
+    # firma_cliente is excluded — it's a quality indicator (vision models
+    # often miss signature blobs even when present), not a match criterion.
+    all_fields_ok = all(
+        f["match"] for k, f in results.items() if k != "firma_cliente"
+    )
     overall_match = identified and all_fields_ok
 
     return {
