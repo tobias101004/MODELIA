@@ -4485,11 +4485,7 @@
         var isIdentified = verData && verData.identified;
 
         if (check.status === 'verified') {
-          var allFieldsOk = verData && verData.all_fields_ok !== false; // legacy rows lack the flag → treat as all ok
-          var verifiedLabel = allFieldsOk
-            ? '&#10003; Verificada — todos los campos correctos'
-            : '&#10003; Verificada — revisa los campos marcados';
-          statusIcon = '<span class="audit-check-status verified">' + verifiedLabel + '</span>';
+          statusIcon = '<span class="audit-check-status verified">&#10003; Verificada</span>';
           if (verData && verData.fields) {
             statusIcon += buildVerificationDetails(verData, '#f0fdf4', '#bbf7d0', '#15803d', 'Detalles verificacion');
           }
@@ -4728,12 +4724,10 @@
               var update;
 
               if (result && result.identified) {
-                // Visit identified (ref+demand match) — treat as verified.
-                // result.match (all fields strict) is kept in notes for debugging.
+                // Visit identified (per backend rule: demand+ref OR ref+date).
                 var notesObj = {
                   auto_verified: true,
                   identified: true,
-                  all_fields_ok: !!result.match,
                   fields: result.fields,
                   extracted: result.extracted,
                   page: result.page

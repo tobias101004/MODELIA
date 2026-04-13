@@ -242,30 +242,31 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
     """
     Compare extracted hoja data against expected visit data from CSV.
 
-    Uses weighted scoring to determine if an extraction matches a check.
-    Identity fields (property_ref, demand_number) are weighted heavily.
-    Secondary fields (agent, client, date, etc.) provide supporting evidence.
-    Signature is a quality indicator, not a matching criterion.
+    Identification rule (per agency policy):
+      • Primary:  num_demanda + ref_propiedad both match → identified.
+      • Fallback: ref_propiedad + fecha_visita both match → identified
+                  (covers collaborator visits where the audited row has a
+                  wildcard client / no demand number on file).
+
+    Other fields previously checked (asesor, nombre_cliente, tipo_propiedad,
+    direccion_propiedad, precio_propiedad) are intentionally ignored: for
+    collaborator visits the audited row often has placeholder values for
+    them, which used to flag genuine matches as failed.
+
+    Signature presence is reported for the operator's information but
+    does NOT affect identification.
 
     Args:
-        extracted: dict from GPT-4o (agent_name, property_ref, visit_date,
-                   client_name, demand_number, property_type, property_address,
-                   property_price, client_signature_present)
-        expected:  dict with CSV data (comercial, ref_propiedad, num_demanda,
-                   fecha_visita, id_seguimiento, nombre_cliente,
-                   tipo_propiedad, direccion_propiedad, precio_propiedad)
+        extracted: dict from GPT-4o (property_ref, demand_number, visit_date,
+                   client_signature_present, ...)
+        expected:  dict with CSV data (ref_propiedad, num_demanda, fecha_visita, ...)
 
     Returns:
-        dict with ``match`` bool, ``score`` int, per-field ``fields`` results,
-        and raw ``extracted`` data.
+        dict with ``match`` bool, per-field ``fields`` results, and raw ``extracted``.
     """
     results = {}
-    weighted_score = 0
-    max_possible_score = 0
 
-    # ── Identity fields (high weight) ──────────────────────────────────
-
-    # Nº solicitud/demanda — strongest identifier, unique per visit/client (weight: 6)
+    # ── Nº solicitud/demanda ──────────────────────────────────────────
     ext_demand = re.sub(r"[^\d]", "", extracted.get("demand_number") or "")
     exp_demand = re.sub(r"[^\d]", "", expected.get("num_demanda") or "")
     if exp_demand:
@@ -281,11 +282,8 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": extracted.get("demand_number", ""),
             "match": demand_match,
         }
-        max_possible_score += 6
-        if demand_match:
-            weighted_score += 6
 
-    # Property REF — supporting identifier, can repeat across visits (weight: 3)
+    # ── Ref propiedad ─────────────────────────────────────────────────
     ext_ref = (extracted.get("property_ref") or "").strip().upper().replace(" ", "")
     exp_ref = (expected.get("ref_propiedad") or "").strip().upper().replace(" ", "")
     ext_ref_digits = re.sub(r"[^\d]", "", ext_ref)
@@ -308,41 +306,8 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": extracted.get("property_ref", ""),
             "match": ref_match,
         }
-        max_possible_score += 3
-        if ref_match:
-            weighted_score += 3
 
-    # ── Supporting fields (medium weight) ──────────────────────────────
-
-    # Asesor / agent (weight: 2)
-    ext_agent = (extracted.get("agent_name") or "").strip()
-    exp_agent = (expected.get("comercial") or "").strip()
-    if exp_agent:
-        agent_match = _fuzzy_name_match(ext_agent, exp_agent)
-        results["asesor"] = {
-            "expected": exp_agent,
-            "found": ext_agent,
-            "match": agent_match,
-        }
-        max_possible_score += 2
-        if agent_match:
-            weighted_score += 2
-
-    # Nombre cliente (weight: 2) — uses flexible matching (nicknames, partial, etc.)
-    ext_client = (extracted.get("client_name") or "").strip()
-    exp_client = (expected.get("nombre_cliente") or "").strip()
-    if exp_client:
-        client_match = _flexible_client_name_match(ext_client, exp_client)
-        results["nombre_cliente"] = {
-            "expected": exp_client,
-            "found": ext_client,
-            "match": client_match,
-        }
-        max_possible_score += 2
-        if client_match:
-            weighted_score += 2
-
-    # Visit date ±7 days (weight: 2)
+    # ── Fecha visita (±7 days) ─────────────────────────────────────────
     ext_date_raw = (extracted.get("visit_date") or "").strip()
     exp_date_raw = (expected.get("fecha_visita") or "").strip()
     if exp_date_raw:
@@ -352,55 +317,8 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
             "found": ext_date_raw,
             "match": date_match,
         }
-        max_possible_score += 2
-        if date_match:
-            weighted_score += 2
 
-    # ── Secondary fields (low weight) ──────────────────────────────────
-
-    # Tipo propiedad (weight: 1)
-    ext_type = (extracted.get("property_type") or "").strip()
-    exp_type = (expected.get("tipo_propiedad") or "").strip()
-    if exp_type:
-        type_match = _fuzzy_name_match(ext_type, exp_type)
-        results["tipo_propiedad"] = {
-            "expected": exp_type,
-            "found": ext_type,
-            "match": type_match,
-        }
-        max_possible_score += 1
-        if type_match:
-            weighted_score += 1
-
-    # Dirección propiedad (weight: 1)
-    ext_addr = (extracted.get("property_address") or "").strip()
-    exp_addr = (expected.get("direccion_propiedad") or "").strip()
-    if exp_addr:
-        addr_match = _fuzzy_name_match(ext_addr, exp_addr)
-        results["direccion_propiedad"] = {
-            "expected": exp_addr,
-            "found": ext_addr,
-            "match": addr_match,
-        }
-        max_possible_score += 1
-        if addr_match:
-            weighted_score += 1
-
-    # Precio propiedad (weight: 1)
-    ext_price = _normalize_price(extracted.get("property_price") or "")
-    exp_price = _normalize_price(expected.get("precio_propiedad") or "")
-    if exp_price:
-        price_match = ext_price == exp_price
-        results["precio_propiedad"] = {
-            "expected": expected.get("precio_propiedad", ""),
-            "found": extracted.get("property_price", ""),
-            "match": price_match,
-        }
-        max_possible_score += 1
-        if price_match:
-            weighted_score += 1
-
-    # ── Firma cliente — quality indicator only, does NOT affect match ──
+    # ── Firma cliente — informational only, does NOT affect match ─────
     sig_present = extracted.get("client_signature_present", False)
     results["firma_cliente"] = {
         "expected": "Presente",
@@ -408,46 +326,37 @@ def verificar_hoja(extracted: dict, expected: dict) -> dict:
         "match": bool(sig_present),
     }
 
-    # ── Determine overall match ────────────────────────────────────────
-    # Two-level result:
-    #
-    # IDENTIFICATION: ref_propiedad + num_demanda both match.
-    #   → This confirms it IS the visit we're looking for.
-    #
-    # VERIFICATION: ALL other fields also match (agent, client, date,
-    #   type, address, price, signature).
-    #   → "verified" = identified AND everything checks out.
-    #   → "incomplete" = identified BUT some fields are missing/wrong.
-    #   → "not_found" = could not even identify the visit in the document.
-    #
-    # The frontend uses `identified` to decide if the visit was found,
-    # and `match` (all fields ok) to decide verified vs incomplete.
+    # ── Identification ────────────────────────────────────────────────
     ref_matched = results.get("ref_propiedad", {}).get("match", False)
     demand_matched = results.get("solicitud_demanda", {}).get("match", False)
+    date_matched = results.get("fecha_visita", {}).get("match", False)
 
-    # Identification: ref + demand (or just one if the other wasn't available)
     if ref_matched and demand_matched:
-        identified = True
+        identified = True                       # primary rule
+    elif ref_matched and date_matched:
+        identified = True                       # fallback when demand can't confirm
     elif demand_matched and not exp_ref:
-        identified = True
-    elif ref_matched and not exp_demand:
-        identified = True
+        identified = True                       # only demand was on file
+    elif ref_matched and not exp_demand and not exp_date_raw:
+        identified = True                       # only ref was on file
     else:
         identified = False
 
-    # Full verification: identified AND every compared field matches.
-    # firma_cliente is excluded — it's a quality indicator (vision models
-    # often miss signature blobs even when present), not a match criterion.
-    all_fields_ok = all(
-        f["match"] for k, f in results.items() if k != "firma_cliente"
+    # Score is used by emparejar_hojas to greedily assign the best PDF page
+    # to each check when there are multiple candidates. Weights prefer
+    # demand+ref over ref+date so the strongest identifier wins on ties.
+    score = (
+        (3 if demand_matched else 0)
+        + (2 if ref_matched else 0)
+        + (1 if date_matched else 0)
     )
-    overall_match = identified and all_fields_ok
 
+    # `match` reflects the same identification outcome — there are no other
+    # criteria layered on top. Kept for the frontend's existing contract.
     return {
-        "match": overall_match,         # True = fully verified (all fields ok)
-        "identified": identified,       # True = ref+demand confirmed this is the visit
-        "score": weighted_score,
-        "max_score": max_possible_score,
+        "match": identified,
+        "identified": identified,
+        "score": score,
         "fields": results,
         "extracted": extracted,
     }
