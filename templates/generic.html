@@ -3849,6 +3849,7 @@
       var parsedRows = [];
       var currentSessionId = null;
       var currentChecksMap = {}; // checkId -> check data
+      var pendingAuditBatchBanner = null; // banner HTML to re-inject after loadSessionDetail re-renders
 
       // ── Field display labels ──
       var FIELD_LABELS = {
@@ -4444,6 +4445,14 @@
 
           checksContainer.innerHTML = html;
           attachCheckHandlers();
+
+          // Re-inject the post-upload banner (if any) into the freshly rendered
+          // upload area, so it persists across this refresh.
+          if (pendingAuditBatchBanner) {
+            var statusEl = document.getElementById('audit-batch-status');
+            if (statusEl) statusEl.innerHTML = pendingAuditBatchBanner;
+            pendingAuditBatchBanner = null;
+          }
         }).catch(function(err) {
           console.error(err);
           checksContainer.innerHTML = '<div class="audit-empty">Error al cargar el detalle.</div>';
@@ -4476,7 +4485,11 @@
         var isIdentified = verData && verData.identified;
 
         if (check.status === 'verified') {
-          statusIcon = '<span class="audit-check-status verified">&#10003; Verificada — todos los campos correctos</span>';
+          var allFieldsOk = verData && verData.all_fields_ok !== false; // legacy rows lack the flag → treat as all ok
+          var verifiedLabel = allFieldsOk
+            ? '&#10003; Verificada — todos los campos correctos'
+            : '&#10003; Verificada — revisa los campos marcados';
+          statusIcon = '<span class="audit-check-status verified">' + verifiedLabel + '</span>';
           if (verData && verData.fields) {
             statusIcon += buildVerificationDetails(verData, '#f0fdf4', '#bbf7d0', '#15803d', 'Detalles verificacion');
           }
@@ -4715,18 +4728,19 @@
               var update;
 
               if (result && result.identified) {
-                // Visit identified (ref+demand match)
-                var isFullyVerified = result.match; // all fields ok too
+                // Visit identified (ref+demand match) — treat as verified.
+                // result.match (all fields strict) is kept in notes for debugging.
                 var notesObj = {
-                  auto_verified: isFullyVerified,
+                  auto_verified: true,
                   identified: true,
+                  all_fields_ok: !!result.match,
                   fields: result.fields,
                   extracted: result.extracted,
                   page: result.page
                 };
                 if (userNote) notesObj.user_note = userNote;
                 update = sb.from('audit_checks').update({
-                  status: isFullyVerified ? 'verified' : 'incomplete',
+                  status: 'verified',
                   verified_at: new Date().toISOString(),
                   notes: JSON.stringify(notesObj)
                 }).eq('id', checkId);
@@ -4759,56 +4773,34 @@
             });
           })
           .then(function() {
-            // Show result message
-            if (statusEl) {
-              if (matchCount > 0) {
-                statusEl.innerHTML = '<div style="padding:10px 14px;background:#dcfce7;border:1px solid #bbf7d0;border-radius:8px;color:#166534;font-size:13px;font-weight:600;">' +
-                  '&#10003; Se encontraron ' + matchCount + ' hoja(s) de visita de las auditadas en este documento.' +
-                '</div>';
-              } else {
-                var debugHtml = '';
-                if (batchData && batchData.extractions_debug && batchData.extractions_debug.length > 0) {
-                  debugHtml = '<div style="margin-top:8px;font-size:11px;font-weight:400;color:#7f1d1d;">' +
-                    '<div style="font-weight:600;margin-bottom:4px;">Datos extraidos del PDF (' + batchData.extractions_debug.length + ' paginas):</div>';
-                  batchData.extractions_debug.forEach(function(ext) {
-                    debugHtml += '<div>Pag ' + ext.page + ': Ref=' + (ext.property_ref || '?') +
-                      ', Agente=' + (ext.agent_name || '?') +
-                      ', Cliente=' + (ext.client_name || '?') +
-                      ', Demanda=' + (ext.demand_number || '?') +
-                      ', Fecha=' + (ext.visit_date || '?') + '</div>';
-                  });
-                  debugHtml += '<div style="font-weight:600;margin-top:6px;margin-bottom:4px;">Visitas esperadas:</div>';
-                  checksArr.forEach(function(c) {
-                    debugHtml += '<div>Ref=' + (c.ref_propiedad || '?') +
-                      ', Agente=' + (c.comercial || '?') +
-                      ', Cliente=' + (c.nombre_cliente || '?') +
-                      ', Demanda=' + (c.num_demanda || '?') +
-                      ', Fecha=' + (c.fecha_visita || '?') + '</div>';
-                  });
-                  debugHtml += '</div>';
-                }
-                statusEl.innerHTML = '<div style="padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:13px;font-weight:600;">' +
-                  '&#10007; No se encontro ninguna coincidencia entre las hojas del documento y las visitas auditadas. El documento no se ha guardado.' +
-                  debugHtml +
-                '</div>';
-              }
-            }
-
             if (progressInterval) clearInterval(progressInterval);
-            // Set progress to 100%
-            var barEl = document.getElementById('audit-progress-bar');
-            var textEl = document.getElementById('audit-progress-text');
-            if (barEl) barEl.style.width = '100%';
-            if (textEl) textEl.textContent = 'Analisis completado';
+
+            // Build the result banner (will persist across the loadSessionDetail re-render
+            // via pendingAuditBatchBanner — see loadSessionDetail).
+            var bannerHtml;
+            if (matchCount > 0) {
+              bannerHtml = '<div style="padding:10px 14px;background:#dcfce7;border:1px solid #bbf7d0;border-radius:8px;color:#166534;font-size:13px;font-weight:600;">' +
+                '&#10003; Se encontraron ' + matchCount + ' hoja(s) de visita de las auditadas en este documento.' +
+              '</div>';
+            } else {
+              bannerHtml = '<div style="padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:13px;font-weight:600;">' +
+                '&#10007; No se encontro ninguna hoja de visita coincidente en este documento.' +
+              '</div>';
+            }
+            pendingAuditBatchBanner = bannerHtml;
 
             updateSessionStatus(currentSessionId);
-            // Reload detail to refresh all UI
-            setTimeout(function() { loadSessionDetail(currentSessionId); }, 2000);
+            // Refresh the detail view immediately. loadSessionDetail re-injects
+            // pendingAuditBatchBanner into #audit-batch-status after render so the
+            // banner persists until the next upload.
+            loadSessionDetail(currentSessionId);
           })
           .catch(function(err) {
             if (progressInterval) clearInterval(progressInterval);
             console.error('Batch verification error:', err);
-            alert('Error al verificar las hojas: ' + (err.message || err));
+            pendingAuditBatchBanner = '<div style="padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:13px;font-weight:600;">' +
+              '&#10007; Error al verificar las hojas: ' + esc(err.message || String(err)) +
+            '</div>';
             loadSessionDetail(currentSessionId);
           });
       }
