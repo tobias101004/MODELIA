@@ -52,6 +52,15 @@ app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB max upload
 # Startup debug — shows in Railway deploy logs
 import logging
 logging.basicConfig(level=logging.INFO)
+
+# Register chatbot blueprint — optional. If it fails to import (e.g. a broken
+# supabase install), the core app (211, comprobacion, auditoria) still starts.
+try:
+    from chatbot.chatbot_app import chatbot_bp  # noqa: E402
+    app.register_blueprint(chatbot_bp)
+    logging.info("[MODELIA] chatbot blueprint registered")
+except Exception as exc:
+    logging.warning(f"[MODELIA] chatbot disabled ({type(exc).__name__}: {exc})")
 _key = os.environ.get("OPENAI_API_KEY", "")
 logging.info(f"[MODELIA] OPENAI_API_KEY present: {bool(_key.strip())}")
 
