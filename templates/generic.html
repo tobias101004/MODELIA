@@ -2869,6 +2869,28 @@
       });
 
       // ── Paso 1: el usuario pide que le enviemos el codigo ──
+      // Registro y login son el MISMO flow desde el punto de vista del
+      // usuario: signInWithOtp({shouldCreateUser:true}) crea la cuenta
+      // si no existe, o reenvia OTP si ya existe. Si Supabase devuelve
+      // "Email address is invalid" (suele ser por un signup a medias
+      // que dejo un user huerfano en auth.users), llamamos
+      // /api/auth/reset-stuck-signup para limpiarlo y reintentamos.
+      function _looksStuckSignup(err) {
+        if (!err) return false;
+        var msg = (err.message || '').toLowerCase();
+        return msg.indexOf('invalid') !== -1 ||
+               msg.indexOf('not allowed') !== -1 ||
+               msg.indexOf('not found') !== -1 ||
+               msg.indexOf('signups') !== -1;
+      }
+
+      function _sendOtp(email) {
+        return sb.auth.signInWithOtp({
+          email: email,
+          options: { shouldCreateUser: true, emailRedirectTo: undefined }
+        });
+      }
+
       emailForm.addEventListener('submit', function(e) {
         e.preventDefault();
         clearMessages();
@@ -2893,15 +2915,23 @@
         authSubmit.disabled = true;
         authSubmit.textContent = 'Enviando...';
 
-        sb.auth.signInWithOtp({
-          email: email,
-          options: {
-            // Permitimos auto-crear cuenta la primera vez (esta filtrado por dominio
-            // en cliente, por trigger SQL en BD y por el middleware del backend).
-            shouldCreateUser: true,
-            // Forzamos OTP code (no magic link)
-            emailRedirectTo: undefined
+        _sendOtp(email).then(function(result) {
+          if (result.error && _looksStuckSignup(result.error)) {
+            // Probable signup a medias. Limpiar y reintentar 1 vez.
+            return fetch('/api/auth/reset-stuck-signup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: email })
+            }).then(function(r) {
+              return r.json().catch(function() { return {}; });
+            }).then(function(j) {
+              if (j && j.ok && j.deleted) {
+                return _sendOtp(email);
+              }
+              return result; // mantener el error original
+            });
           }
+          return result;
         }).then(function(result) {
           authSubmit.disabled = false;
           authSubmit.textContent = 'Enviar codigo';

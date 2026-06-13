@@ -109,3 +109,43 @@ def require_auth(fn):
         g.user = user
         return fn(*args, **kwargs)
     return wrapper
+
+
+def cleanup_orphan_user(email: str) -> dict:
+    """Borra un usuario "huerfano" si existe.
+
+    Un huerfano es un user en auth.users que tiene email_confirmed_at
+    null Y last_sign_in_at null. Eso solo pasa cuando alguien empezo el
+    proceso de OTP/signup y nunca llego a entrar, dejando una entrada
+    incompleta que rompe los siguientes intentos de signInWithOtp con
+    el mensaje engañoso "Email address is invalid".
+
+    SOLO toca usuarios huerfanos del dominio permitido. No puede usarse
+    para borrar cuentas activas.
+
+    Devuelve {ok, deleted, reason}.
+    """
+    email = (email or "").strip().lower()
+    if not email or not email.endswith("@" + ALLOWED_EMAIL_DOMAIN):
+        return {"ok": False, "deleted": False, "reason": "dominio_no_permitido"}
+    try:
+        resp = _admin.auth.admin.list_users()
+        users = resp if isinstance(resp, list) else getattr(resp, "users", []) or []
+        target = None
+        for u in users:
+            u_email = (getattr(u, "email", "") or "").lower()
+            if u_email == email:
+                target = u
+                break
+        if target is None:
+            return {"ok": True, "deleted": False, "reason": "no_existe"}
+        confirmed = getattr(target, "email_confirmed_at", None)
+        last_sign_in = getattr(target, "last_sign_in_at", None)
+        if confirmed is not None or last_sign_in is not None:
+            return {"ok": False, "deleted": False, "reason": "cuenta_activa"}
+        _admin.auth.admin.delete_user(getattr(target, "id"))
+        log.info(f"[AUTH] huerfano eliminado: {email}")
+        return {"ok": True, "deleted": True, "reason": "huerfano_limpiado"}
+    except Exception as exc:
+        log.warning(f"[AUTH] cleanup_orphan_user fail: {exc}")
+        return {"ok": False, "deleted": False, "reason": "error_interno"}

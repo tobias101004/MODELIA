@@ -45,6 +45,7 @@ from hoja_extractor import (                                   # noqa: E402
 )
 from auth import (                                              # noqa: E402
     require_auth,
+    cleanup_orphan_user,
     SUPABASE_URL as _SUPABASE_URL,
     ALLOWED_EMAIL_DOMAIN as _ALLOWED_DOMAIN,
 )
@@ -116,6 +117,29 @@ def _track_api_call(count: int = 1) -> bool:
 @app.route("/")
 def index():
     return render_template("generic.html")
+
+
+@app.route("/api/auth/reset-stuck-signup", methods=["POST"])
+def reset_stuck_signup():
+    """Endpoint publico (NO protegido) que limpia un user huerfano del
+    auth.users para permitir reintentos limpios de signInWithOtp. El
+    frontend lo llama transparentemente si signInWithOtp falla con
+    'Email address is invalid' u otros mensajes ambiguos.
+
+    Solo borra users del dominio permitido que cumplan email_confirmed_at
+    IS NULL AND last_sign_in_at IS NULL (es decir, signups a medias). NO
+    puede afectar a cuentas activas."""
+    if not _check_rate_limit():
+        return jsonify({"error": "Demasiadas peticiones."}), 429
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email", "") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "reason": "email_requerido"}), 400
+    if not email.endswith("@" + _ALLOWED_DOMAIN):
+        return jsonify({"ok": False, "reason": "dominio_no_permitido"}), 403
+    result = cleanup_orphan_user(email)
+    status = 200 if result.get("ok") else 409
+    return jsonify(result), status
 
 
 @app.route("/api/config")
