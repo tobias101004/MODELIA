@@ -2950,22 +2950,11 @@
 
       modalLogoutConfirm.addEventListener('click', function() {
         modalLogout.classList.remove('active');
-        // Feedback visual instantaneo: no esperamos a la red ni al evento
-        // SIGNED_OUT (que puede no dispararse en todas las versiones del
-        // SDK). showLogin() es idempotente, asi que si despues llega
-        // SIGNED_OUT se vuelve a llamar y no pasa nada.
-        showLogin();
-        // En paralelo invalidamos la sesion en Supabase para que el JWT
-        // quede revocado en el servidor y no se pueda reusar.
-        if (sb) {
-          try {
-            sb.auth.signOut({ scope: 'global' }).catch(function() { /* ignore */ });
-          } catch (e) { /* ignore */ }
-        }
-        // Doble seguro: limpiamos cualquier rastro de sesion en este
-        // origen para que un refresh inmediato no la "resucite".
+
+        // 1) Borrar inmediatamente cualquier rastro de sesion local. Esto
+        //    garantiza que un refresh subsiguiente NO resucite la sesion
+        //    aunque la llamada al servidor falle o tarde.
         try {
-          var origin = window.location.origin;
           Object.keys(localStorage).forEach(function(k) {
             if (k.indexOf('supabase') !== -1 || k.indexOf('sb-') === 0) {
               localStorage.removeItem(k);
@@ -2977,6 +2966,19 @@
             }
           });
         } catch (e) { /* ignore */ }
+
+        // 2) Invalidar el JWT en el servidor (best-effort, no bloquea).
+        if (sb) {
+          try {
+            sb.auth.signOut({ scope: 'global' }).catch(function() {});
+          } catch (e) { /* ignore */ }
+        }
+
+        // 3) Recargar a "/" — pantalla limpia garantizada, sin depender
+        //    de CSS ni de eventos del SDK. .replace() ademas elimina la
+        //    pagina actual del history para que el boton "atras" del
+        //    navegador no vuelva a la sesion.
+        window.location.replace('/');
       });
 
       // ── Helper global: fetch al backend con Authorization Bearer ──
