@@ -3,13 +3,23 @@ database.py
 Supabase storage for leads and chat logs.
 """
 
+import os
 import uuid
 from datetime import datetime
 
 from supabase import create_client
 
-SUPABASE_URL = "https://pntipdspiivffvxfyshg.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBudGlwZHNwaWl2ZmZ2eGZ5c2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTg5NzYsImV4cCI6MjA4NzM3NDk3Nn0.2n0YukribUPyIcaWcercFEzpStq-VhQTzFpE69Pnv2M"
+# Las credenciales se leen de env vars (Railway). Si por accidente no
+# estuvieran definidas, caemos al valor publico actual para no romper el
+# arranque, pero hay que dejarlas configuradas en Railway.
+SUPABASE_URL = os.environ.get(
+    "SUPABASE_URL",
+    "https://pntipdspiivffvxfyshg.supabase.co",
+).strip()
+SUPABASE_KEY = os.environ.get(
+    "SUPABASE_ANON_KEY",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBudGlwZHNwaWl2ZmZ2eGZ5c2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTg5NzYsImV4cCI6MjA4NzM3NDk3Nn0.2n0YukribUPyIcaWcercFEzpStq-VhQTzFpE69Pnv2M",
+).strip()
 
 
 class _LazyClient:

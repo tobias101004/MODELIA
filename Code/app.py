@@ -43,6 +43,11 @@ from hoja_extractor import (                                   # noqa: E402
     extraer_datos_hoja, verificar_hoja,
     extraer_datos_hoja_por_pagina, emparejar_hojas,
 )
+from auth import (                                              # noqa: E402
+    require_auth,
+    SUPABASE_URL as _SUPABASE_URL,
+    ALLOWED_EMAIL_DOMAIN as _ALLOWED_DOMAIN,
+)
 
 # ── App Flask ─────────────────────────────────────────────────────────────────
 
@@ -113,7 +118,25 @@ def index():
     return render_template("generic.html")
 
 
+@app.route("/api/config")
+def api_config():
+    """Devuelve la URL del proyecto y la anon key (publicas por diseno) para
+    que el frontend no tenga que hardcodearlas. La service-role key NUNCA
+    se expone aqui."""
+    return jsonify({
+        "supabaseUrl": _SUPABASE_URL,
+        "supabaseAnonKey": os.environ.get(
+            "SUPABASE_ANON_KEY",
+            # Fallback solo para arranque local sin env vars; en Railway
+            # debe estar la env var definida.
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBudGlwZHNwaWl2ZmZ2eGZ5c2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTg5NzYsImV4cCI6MjA4NzM3NDk3Nn0.2n0YukribUPyIcaWcercFEzpStq-VhQTzFpE69Pnv2M",
+        ).strip(),
+        "allowedEmailDomain": _ALLOWED_DOMAIN,
+    })
+
+
 @app.route("/process", methods=["POST"])
+@require_auth
 def process():
     if not _check_rate_limit():
         return jsonify({"error": "Demasiadas peticiones. Espera un momento."}), 429
@@ -194,6 +217,7 @@ def process():
 
 
 @app.route("/comprobacion", methods=["POST"])
+@require_auth
 def comprobacion():
     if not _check_rate_limit():
         return jsonify({"error": "Demasiadas peticiones. Espera un momento."}), 429
@@ -262,6 +286,7 @@ def comprobacion():
 
 
 @app.route("/verify-hoja", methods=["POST"])
+@require_auth
 def verify_hoja():
     """Receive a hoja de visita PDF + expected visit data, verify they match."""
     if not _check_rate_limit():
@@ -318,6 +343,7 @@ def verify_hoja():
 
 
 @app.route("/verify-hojas-batch", methods=["POST"])
+@require_auth
 def verify_hojas_batch():
     """Receive a single PDF with multiple hojas + expected checks, verify matches.
 
@@ -426,6 +452,7 @@ def verify_hojas_batch():
 
 
 @app.route("/download")
+@require_auth
 def download():
     txt_path = MODELIA_DIR / "Output" / "211.txt"
     if not txt_path.exists():

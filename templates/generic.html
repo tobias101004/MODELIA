@@ -1844,39 +1844,23 @@
       <h1 class="auth-title">Cardenas — Portal IA</h1>
       <p class="auth-subtitle">Tu plataforma inteligente de gestion inmobiliaria</p>
 
-      <!-- Tabs -->
-      <div class="auth-tabs" id="auth-tabs">
-        <button class="auth-tab active" id="tab-login" type="button">Iniciar sesion</button>
-        <button class="auth-tab" id="tab-signup" type="button">Registrarse</button>
-      </div>
-
-      <!-- Login / Signup form -->
-      <form class="auth-form" id="auth-form" novalidate>
-        <input class="auth-input" type="email" id="auth-email" placeholder="Email" required autocomplete="email">
-        <input class="auth-input" type="password" id="auth-password" placeholder="Contrasena" required autocomplete="current-password" minlength="6">
+      <!-- Paso 1: pedir email -->
+      <form class="auth-form" id="auth-email-form" novalidate>
+        <input class="auth-input" type="email" id="auth-email" placeholder="tu.email@cardenas-grancanaria.com" required autocomplete="email">
         <div class="auth-error" id="auth-error"></div>
         <div class="auth-success" id="auth-success"></div>
-        <button class="btn-primary" type="submit" id="auth-submit">Iniciar sesion</button>
-        <button class="auth-forgot-link" type="button" id="btn-forgot">Has olvidado tu contrasena?</button>
+        <button class="btn-primary" type="submit" id="auth-submit">Enviar codigo</button>
+        <p style="font-size:12px;color:var(--gray-600);margin-top:14px;text-align:center;line-height:1.45;">Te enviaremos un codigo de 6 digitos a tu correo de empresa para iniciar sesion de forma segura. Solo se aceptan emails @cardenas-grancanaria.com.</p>
       </form>
 
-      <!-- Forgot password form (hidden by default) -->
-      <form class="auth-form" id="forgot-form" novalidate style="display:none;">
-        <input class="auth-input" type="email" id="forgot-email" placeholder="Email" required autocomplete="email">
-        <div class="auth-error" id="forgot-error"></div>
-        <div class="auth-success" id="forgot-success"></div>
-        <button class="btn-primary" type="submit" id="forgot-submit">Enviar enlace de recuperacion</button>
-        <button class="auth-back-link visible" type="button" id="btn-back-login">Volver a iniciar sesion</button>
-      </form>
-
-      <!-- Reset password form (shown after clicking recovery link from email) -->
-      <form class="auth-form" id="reset-form" novalidate style="display:none;">
-        <p style="font-size:13px;color:var(--gray-600);margin:0 0 16px;">Introduce tu nueva contrasena.</p>
-        <input class="auth-input" type="password" id="reset-password" placeholder="Nueva contrasena" required autocomplete="new-password">
-        <input class="auth-input" type="password" id="reset-password-confirm" placeholder="Confirmar contrasena" required autocomplete="new-password">
-        <div class="auth-error" id="reset-error"></div>
-        <div class="auth-success" id="reset-success"></div>
-        <button class="btn-primary" type="submit" id="reset-submit">Cambiar contrasena</button>
+      <!-- Paso 2: pedir codigo OTP -->
+      <form class="auth-form" id="auth-otp-form" novalidate style="display:none;">
+        <p style="font-size:13px;color:var(--gray-600);margin:0 0 16px;text-align:center;">Hemos enviado un codigo de 6 digitos a<br><strong id="auth-otp-email-display"></strong></p>
+        <input class="auth-input" type="text" id="auth-otp-code" placeholder="000000" required autocomplete="one-time-code" inputmode="numeric" pattern="\d{6}" maxlength="6" style="text-align:center;letter-spacing:10px;font-size:20px;font-weight:600;">
+        <div class="auth-error" id="auth-otp-error"></div>
+        <div class="auth-success" id="auth-otp-success"></div>
+        <button class="btn-primary" type="submit" id="auth-otp-submit">Verificar y entrar</button>
+        <button class="auth-back-link visible" type="button" id="btn-otp-back">Cambiar email</button>
       </form>
     </div>
   </div>
@@ -2295,7 +2279,7 @@
               </div>
               <div class="done-text">Archivo generado correctamente</div>
               <div class="done-actions">
-                <a class="btn-primary" id="download-btn" href="/download">Descargar 211.txt</a>
+                <button class="btn-primary" id="download-btn" type="button">Descargar 211.txt</button>
                 <button class="btn-back" id="back-btn">Procesar otra escritura</button>
               </div>
             </div>
@@ -2613,7 +2597,7 @@
     </button>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
       <h1 style="font-size:20px;font-weight:700;">Leads del Chatbot</h1>
-      <a href="/chatbot/api/leads/csv" class="chat-toolbar-btn" style="text-decoration:none;">Exportar CSV</a>
+      <button type="button" id="leads-csv-btn" class="chat-toolbar-btn" style="text-decoration:none;">Exportar CSV</button>
     </div>
     <div class="leads-stats">
       <div class="leads-stat"><div class="leads-stat-label">Total</div><div class="leads-stat-value" id="leads-stat-total">-</div></div>
@@ -2689,39 +2673,36 @@
     // AUTH MODULE
     // ================================================================
     (function initAuth() {
-      var SUPABASE_URL  = 'https://pntipdspiivffvxfyshg.supabase.co';
-      var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBudGlwZHNwaWl2ZmZ2eGZ5c2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTg5NzYsImV4cCI6MjA4NzM3NDk3Nn0.2n0YukribUPyIcaWcercFEzpStq-VhQTzFpE69Pnv2M';
-
-      // DOM refs — main views
+      // ── DOM refs — main views ──
       var viewLoading    = document.getElementById('view-loading');
       var viewAuth       = document.getElementById('view-auth');
       var viewDashboard  = document.getElementById('view-dashboard');
       var viewAccount    = document.getElementById('view-account');
       var mainContent    = document.getElementById('main-content');
       var headerButtons  = document.getElementById('header-buttons');
-      // account-email element removed; email is shown in modal-account popup
 
-      // DOM refs — auth form
-      var tabLogin       = document.getElementById('tab-login');
-      var tabSignup      = document.getElementById('tab-signup');
-      var authTabs       = document.getElementById('auth-tabs');
-      var authForm       = document.getElementById('auth-form');
+      // ── DOM refs — paso 1 (email) ──
+      var emailForm      = document.getElementById('auth-email-form');
       var authEmail      = document.getElementById('auth-email');
-      var authPassword   = document.getElementById('auth-password');
       var authError      = document.getElementById('auth-error');
       var authSuccess    = document.getElementById('auth-success');
       var authSubmit     = document.getElementById('auth-submit');
-      var btnForgot      = document.getElementById('btn-forgot');
 
-      // DOM refs — forgot password form
-      var forgotForm     = document.getElementById('forgot-form');
-      var forgotEmail    = document.getElementById('forgot-email');
-      var forgotError    = document.getElementById('forgot-error');
-      var forgotSuccess  = document.getElementById('forgot-success');
-      var forgotSubmit   = document.getElementById('forgot-submit');
-      var btnBackLogin   = document.getElementById('btn-back-login');
+      // ── DOM refs — paso 2 (codigo OTP) ──
+      var otpForm        = document.getElementById('auth-otp-form');
+      var otpEmailDisp   = document.getElementById('auth-otp-email-display');
+      var otpCode        = document.getElementById('auth-otp-code');
+      var otpError       = document.getElementById('auth-otp-error');
+      var otpSuccess     = document.getElementById('auth-otp-success');
+      var otpSubmit      = document.getElementById('auth-otp-submit');
+      var btnOtpBack     = document.getElementById('btn-otp-back');
 
-      // ── Guard: if Supabase CDN failed to load ──
+      // Estado: email del paso 1 (para verificar el codigo del paso 2)
+      var pendingEmail = '';
+      // Dominio permitido (se carga del backend en /api/config)
+      var allowedDomain = 'cardenas-grancanaria.com';
+
+      // ── Guard: Supabase CDN cargado ──
       if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
         authError.textContent = 'Error cargando el servicio de autenticacion. Recarga la pagina.';
         authError.classList.add('visible');
@@ -2729,48 +2710,36 @@
         return;
       }
 
-      // ── Create Supabase client ──
-      var sb;
-      try {
-        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-      } catch (err) {
-        authError.textContent = 'Error inicializando autenticacion: ' + err.message;
-        authError.classList.add('visible');
-        authSubmit.disabled = true;
-        return;
-      }
-
-      window._supabase = sb;
-
-      // ── Ensure storage bucket exists ──
-      sb.storage.getBucket('hojas-visita').then(function(res) {
-        if (res.error && res.error.message && res.error.message.indexOf('not found') !== -1) {
-          sb.storage.createBucket('hojas-visita', { public: false }).then(function(createRes) {
-            if (createRes.error) {
-              console.warn('[STORAGE] Could not create bucket hojas-visita:', createRes.error.message);
-            } else {
-              console.log('[STORAGE] Bucket hojas-visita created successfully');
-            }
-          });
-        }
-      });
-
-      // ── Helper: clear all auth messages ──
+      // ── Helpers ──
       function clearMessages() {
         authError.classList.remove('visible');
         authSuccess.classList.remove('visible');
-        forgotError.classList.remove('visible');
-        forgotSuccess.classList.remove('visible');
+        otpError.classList.remove('visible');
+        otpSuccess.classList.remove('visible');
+      }
+
+      function showEmailStep() {
+        emailForm.style.display = '';
+        otpForm.style.display = 'none';
+        otpCode.value = '';
+        clearMessages();
+        // No vaciar authEmail por si quiere reintentar con el mismo
+      }
+
+      function showOtpStep(email) {
+        pendingEmail = email;
+        otpEmailDisp.textContent = email;
+        emailForm.style.display = 'none';
+        otpForm.style.display = '';
+        otpCode.value = '';
+        clearMessages();
+        setTimeout(function() { otpCode.focus(); }, 50);
       }
 
       // ── View switching ──
       var _appAlreadyShown = false;
 
       function showApp(user) {
-        // If app is already shown (user is logged in and using the app),
-        // only update user info — do NOT reset the current view.
-        // This prevents token refresh (onAuthStateChange) from
-        // wiping progress when the user switches tabs/windows.
         if (_appAlreadyShown) {
           window._currentUserEmail = user.email;
           return;
@@ -2787,7 +2756,6 @@
         if (va) va.classList.remove('visible');
         viewDashboard.classList.add('visible');
         headerButtons.classList.add('visible');
-        accountEmail.textContent = user.email;
         window._currentUserEmail = user.email;
       }
 
@@ -2804,220 +2772,167 @@
         if (va) va.classList.remove('visible');
         headerButtons.classList.remove('visible');
         window._currentUserEmail = '';
+        pendingEmail = '';
         authEmail.value = '';
-        authPassword.value = '';
-        clearMessages();
-        showAuthForm();
+        showEmailStep();
       }
 
-      // ── Toggle between auth form and forgot form ──
-      function showAuthForm() {
-        authForm.style.display = '';
-        authTabs.style.display = '';
-        forgotForm.style.display = 'none';
-        clearMessages();
-      }
+      // ── Bootstrap: cargar config del backend y crear cliente Supabase ──
+      var sb;
+      fetch('/api/config').then(function(r) { return r.json(); }).then(function(cfg) {
+        if (cfg && cfg.allowedEmailDomain) allowedDomain = String(cfg.allowedEmailDomain).toLowerCase();
+        try {
+          sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true,
+              detectSessionInUrl: false,
+              flowType: 'pkce'
+            }
+          });
+        } catch (err) {
+          authError.textContent = 'Error inicializando autenticacion: ' + err.message;
+          authError.classList.add('visible');
+          authSubmit.disabled = true;
+          return;
+        }
+        window._supabase = sb;
 
-      function showForgotForm() {
-        authForm.style.display = 'none';
-        authTabs.style.display = 'none';
-        forgotForm.style.display = '';
-        forgotEmail.value = authEmail.value;
-        clearMessages();
-        forgotEmail.focus();
-      }
+        // Storage bucket (best-effort; las RLS lo controlan)
+        try {
+          sb.storage.getBucket('hojas-visita').then(function(res) {
+            if (res && res.error && res.error.message && res.error.message.indexOf('not found') !== -1) {
+              sb.storage.createBucket('hojas-visita', { public: false }).then(function(createRes) {
+                if (createRes && createRes.error) {
+                  console.warn('[STORAGE] Could not create bucket hojas-visita:', createRes.error.message);
+                }
+              });
+            }
+          });
+        } catch (e) { /* ignore */ }
 
-      btnForgot.addEventListener('click', showForgotForm);
-      btnBackLogin.addEventListener('click', showAuthForm);
+        // Estado de sesion ya creada (refresco / vuelta de pestana)
+        sb.auth.getSession().then(function(result) {
+          var session = result && result.data && result.data.session;
+          if (session && session.user) {
+            showApp(session.user);
+          } else {
+            showLogin();
+          }
+        }).catch(function() { showLogin(); });
 
-      // ── Tab switching ──
-      var isSignup = false;
-
-      tabLogin.addEventListener('click', function() {
-        isSignup = false;
-        tabLogin.classList.add('active');
-        tabSignup.classList.remove('active');
-        authSubmit.textContent = 'Iniciar sesion';
-        btnForgot.style.display = '';
-        authPassword.style.display = '';
-        clearMessages();
+        // Cambios de sesion (login OK, signOut, refresh, ...)
+        sb.auth.onAuthStateChange(function(event, session) {
+          if (event === 'SIGNED_OUT' || !session || !session.user) {
+            showLogin();
+            return;
+          }
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+            showApp(session.user);
+          }
+        });
+      }).catch(function(err) {
+        authError.textContent = 'No se pudo cargar la configuracion del servidor: ' + err.message;
+        authError.classList.add('visible');
+        authSubmit.disabled = true;
       });
 
-      tabSignup.addEventListener('click', function() {
-        isSignup = true;
-        tabSignup.classList.add('active');
-        tabLogin.classList.remove('active');
-        authSubmit.textContent = 'Registrarse';
-        btnForgot.style.display = 'none';
-        authPassword.style.display = '';
-        clearMessages();
-      });
-
-      // ── Form submit (login / signup) ──
-      authForm.addEventListener('submit', function(e) {
+      // ── Paso 1: el usuario pide que le enviemos el codigo ──
+      emailForm.addEventListener('submit', function(e) {
         e.preventDefault();
         clearMessages();
-
-        var email = authEmail.value.trim();
-        var password = authPassword.value;
-
-        if (!email || !password) {
-          authError.textContent = 'Introduce email y contrasena.';
+        if (!sb) {
+          authError.textContent = 'Aun cargando la configuracion. Espera un momento e intentalo de nuevo.';
           authError.classList.add('visible');
           return;
         }
 
-        if (password.length < 6) {
-          authError.textContent = 'La contrasena debe tener al menos 6 caracteres.';
+        var email = (authEmail.value || '').trim().toLowerCase();
+        if (!email || email.indexOf('@') === -1) {
+          authError.textContent = 'Introduce un email valido.';
+          authError.classList.add('visible');
+          return;
+        }
+        if (!email.endsWith('@' + allowedDomain)) {
+          authError.textContent = 'Solo se aceptan correos @' + allowedDomain + '.';
           authError.classList.add('visible');
           return;
         }
 
         authSubmit.disabled = true;
-        authSubmit.textContent = isSignup ? 'Registrando...' : 'Entrando...';
+        authSubmit.textContent = 'Enviando...';
 
-        var authPromise = isSignup
-          ? sb.auth.signUp({ email: email, password: password, options: { emailRedirectTo: window.location.origin } })
-          : sb.auth.signInWithPassword({ email: email, password: password });
-
-        authPromise.then(function(result) {
+        sb.auth.signInWithOtp({
+          email: email,
+          options: {
+            // Permitimos auto-crear cuenta la primera vez (esta filtrado por dominio
+            // en cliente, por trigger SQL en BD y por el middleware del backend).
+            shouldCreateUser: true,
+            // Forzamos OTP code (no magic link)
+            emailRedirectTo: undefined
+          }
+        }).then(function(result) {
           authSubmit.disabled = false;
-          authSubmit.textContent = isSignup ? 'Registrarse' : 'Iniciar sesion';
-
+          authSubmit.textContent = 'Enviar codigo';
           if (result.error) {
-            authError.textContent = result.error.message;
+            authError.textContent = result.error.message || 'No se pudo enviar el codigo.';
             authError.classList.add('visible');
             return;
           }
-
-          // After signup, if email confirmation is enabled, user won't have a session yet
-          if (isSignup && result.data && result.data.user && !result.data.session) {
-            authSuccess.textContent = 'Te hemos enviado un email de confirmacion. Revisa tu bandeja de entrada para activar tu cuenta.';
-            authSuccess.classList.add('visible');
-            authForm.querySelector('[type="submit"]').style.display = 'none';
-            return;
-          }
-
-          // onAuthStateChange will handle the view switch
+          showOtpStep(email);
         }).catch(function(err) {
           authSubmit.disabled = false;
-          authSubmit.textContent = isSignup ? 'Registrarse' : 'Iniciar sesion';
+          authSubmit.textContent = 'Enviar codigo';
           authError.textContent = 'Error de red: ' + err.message;
           authError.classList.add('visible');
         });
       });
 
-      // ── Forgot password submit ──
-      forgotForm.addEventListener('submit', function(e) {
+      // ── Paso 2: el usuario mete el codigo de 6 digitos ──
+      otpForm.addEventListener('submit', function(e) {
         e.preventDefault();
         clearMessages();
+        if (!sb) return;
 
-        var email = forgotEmail.value.trim();
-        if (!email) {
-          forgotError.textContent = 'Introduce tu email.';
-          forgotError.classList.add('visible');
+        var code = (otpCode.value || '').trim();
+        if (!/^\d{6}$/.test(code)) {
+          otpError.textContent = 'El codigo debe tener 6 digitos.';
+          otpError.classList.add('visible');
+          return;
+        }
+        if (!pendingEmail) {
+          otpError.textContent = 'Sesion expirada. Vuelve a pedir el codigo.';
+          otpError.classList.add('visible');
           return;
         }
 
-        forgotSubmit.disabled = true;
-        forgotSubmit.textContent = 'Enviando...';
+        otpSubmit.disabled = true;
+        otpSubmit.textContent = 'Verificando...';
 
-        sb.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin
+        sb.auth.verifyOtp({
+          email: pendingEmail,
+          token: code,
+          type: 'email'
         }).then(function(result) {
-          forgotSubmit.disabled = false;
-          forgotSubmit.textContent = 'Enviar enlace de recuperacion';
-
+          otpSubmit.disabled = false;
+          otpSubmit.textContent = 'Verificar y entrar';
           if (result.error) {
-            forgotError.textContent = result.error.message;
-            forgotError.classList.add('visible');
+            otpError.textContent = result.error.message || 'Codigo incorrecto o caducado.';
+            otpError.classList.add('visible');
             return;
           }
-
-          forgotSuccess.textContent = 'Si existe una cuenta con ese email, recibiras un enlace para restablecer tu contrasena.';
-          forgotSuccess.classList.add('visible');
+          // onAuthStateChange entrara con SIGNED_IN y disparara showApp()
         }).catch(function(err) {
-          forgotSubmit.disabled = false;
-          forgotSubmit.textContent = 'Enviar enlace de recuperacion';
-          forgotError.textContent = 'Error de red: ' + err.message;
-          forgotError.classList.add('visible');
+          otpSubmit.disabled = false;
+          otpSubmit.textContent = 'Verificar y entrar';
+          otpError.textContent = 'Error de red: ' + err.message;
+          otpError.classList.add('visible');
         });
       });
 
-      // ── Password reset form (after clicking email link) ──
-      var resetForm     = document.getElementById('reset-form');
-      var resetPassword = document.getElementById('reset-password');
-      var resetConfirm  = document.getElementById('reset-password-confirm');
-      var resetError    = document.getElementById('reset-error');
-      var resetSuccess  = document.getElementById('reset-success');
-      var resetSubmit   = document.getElementById('reset-submit');
-
-      function showPasswordResetForm() {
-        _appAlreadyShown = false;
-        authForm.style.display = 'none';
-        authTabs.style.display = 'none';
-        forgotForm.style.display = 'none';
-        resetForm.style.display = '';
-        viewAuth.classList.remove('hidden');
-        viewDashboard.classList.remove('visible');
-        mainContent.classList.remove('visible');
-        viewAccount.classList.remove('visible');
-        var vc = document.getElementById('view-comprobacion');
-        if (vc) vc.classList.remove('visible');
-        var va = document.getElementById('view-auditoria');
-        if (va) va.classList.remove('visible');
-        headerButtons.classList.remove('visible');
-      }
-
-      resetForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        resetError.classList.remove('visible');
-        resetSuccess.classList.remove('visible');
-
-        var pw = resetPassword.value;
-        var pw2 = resetConfirm.value;
-
-        if (!pw || pw.length < 6) {
-          resetError.textContent = 'La contrasena debe tener al menos 6 caracteres.';
-          resetError.classList.add('visible');
-          return;
-        }
-        if (pw !== pw2) {
-          resetError.textContent = 'Las contrasenas no coinciden.';
-          resetError.classList.add('visible');
-          return;
-        }
-
-        resetSubmit.disabled = true;
-        resetSubmit.textContent = 'Actualizando...';
-
-        sb.auth.updateUser({ password: pw }).then(function(result) {
-          resetSubmit.disabled = false;
-          resetSubmit.textContent = 'Cambiar contrasena';
-
-          if (result.error) {
-            resetError.textContent = result.error.message;
-            resetError.classList.add('visible');
-            return;
-          }
-
-          resetSuccess.textContent = 'Contrasena actualizada correctamente. Redirigiendo...';
-          resetSuccess.classList.add('visible');
-          setTimeout(function() {
-            _isPasswordRecovery = false;
-            resetForm.style.display = 'none';
-            resetPassword.value = '';
-            resetConfirm.value = '';
-            resetError.classList.remove('visible');
-            resetSuccess.classList.remove('visible');
-            showApp(result.data.user);
-          }, 2000);
-        }).catch(function(err) {
-          resetSubmit.disabled = false;
-          resetSubmit.textContent = 'Cambiar contrasena';
-          resetError.textContent = 'Error: ' + err.message;
-          resetError.classList.add('visible');
-        });
+      btnOtpBack.addEventListener('click', function() {
+        pendingEmail = '';
+        showEmailStep();
       });
 
       // ── Logout ──
@@ -3035,50 +2950,55 @@
 
       modalLogoutConfirm.addEventListener('click', function() {
         modalLogout.classList.remove('active');
-        sb.auth.signOut().catch(function() {
+        if (sb) {
+          sb.auth.signOut().catch(function() { showLogin(); });
+        } else {
           showLogin();
+        }
+      });
+
+      // ── Helper global: fetch al backend con Authorization Bearer ──
+      // Cualquier modulo que llame al backend Flask debe usar window.authFetch
+      // para que se incluya el JWT automaticamente.
+      window.authFetch = function(url, opts) {
+        opts = opts || {};
+        var headers = new Headers(opts.headers || {});
+        function send(token) {
+          if (token) headers.set('Authorization', 'Bearer ' + token);
+          var newOpts = Object.assign({}, opts, { headers: headers });
+          return fetch(url, newOpts);
+        }
+        if (!sb) {
+          return send(null);
+        }
+        return sb.auth.getSession().then(function(r) {
+          var token = r && r.data && r.data.session && r.data.session.access_token;
+          return send(token);
+        }).catch(function() { return send(null); });
+      };
+
+      // ── Helper global: descarga de un recurso protegido ──
+      // Los <a href> no envian Authorization; para descargas autenticadas
+      // usamos authFetch + blob + click programatico.
+      window.authDownload = function(url, filename) {
+        return window.authFetch(url).then(function(resp) {
+          if (!resp.ok) {
+            throw new Error('HTTP ' + resp.status);
+          }
+          return resp.blob().then(function(blob) {
+            var objectUrl = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = filename || 'download';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() {
+              document.body.removeChild(a);
+              URL.revokeObjectURL(objectUrl);
+            }, 100);
+          });
         });
-      });
-
-      // ── Detect recovery flow from URL (works with both PKCE and Implicit) ──
-      var _isPasswordRecovery = false;
-      var urlParams = new URLSearchParams(window.location.search);
-      var hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
-      if (urlParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery') {
-        _isPasswordRecovery = true;
-      }
-
-      sb.auth.onAuthStateChange(function(event, session) {
-        if (event === 'PASSWORD_RECOVERY') {
-          _isPasswordRecovery = true;
-          showPasswordResetForm();
-          return;
-        }
-        if (_isPasswordRecovery && session && session.user) {
-          _isPasswordRecovery = false;
-          showPasswordResetForm();
-          return;
-        }
-        if (session && session.user) {
-          showApp(session.user);
-        } else {
-          showLogin();
-        }
-      });
-
-      // ── Initial session check ──
-      sb.auth.getSession().then(function(result) {
-        var session = result.data && result.data.session;
-        if (_isPasswordRecovery && session && session.user) {
-          showPasswordResetForm();
-        } else if (session && session.user) {
-          showApp(session.user);
-        } else {
-          showLogin();
-        }
-      }).catch(function() {
-        showLogin();
-      });
+      };
 
     })();
 
@@ -3105,6 +3025,37 @@
       var viewDone       = document.getElementById('view-done');
 
       var selectedFile = null;
+
+      // ── Descarga autenticada del 211.txt ──
+      if (downloadBtn) {
+        downloadBtn.addEventListener('click', function() {
+          downloadBtn.disabled = true;
+          var original = downloadBtn.textContent;
+          downloadBtn.textContent = 'Descargando...';
+          window.authDownload('/download', '211.txt').catch(function(err) {
+            alert('No se pudo descargar el fichero: ' + err.message);
+          }).then(function() {
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = original;
+          });
+        });
+      }
+
+      // ── Descarga autenticada del CSV de leads ──
+      var leadsCsvBtn = document.getElementById('leads-csv-btn');
+      if (leadsCsvBtn) {
+        leadsCsvBtn.addEventListener('click', function() {
+          leadsCsvBtn.disabled = true;
+          var original = leadsCsvBtn.textContent;
+          leadsCsvBtn.textContent = 'Exportando...';
+          window.authDownload('/chatbot/api/leads/csv', 'leads_cardenas.csv').catch(function(err) {
+            alert('No se pudo exportar el CSV: ' + err.message);
+          }).then(function() {
+            leadsCsvBtn.disabled = false;
+            leadsCsvBtn.textContent = original;
+          });
+        });
+      }
 
       // ── Contact modal ───────────────────────────────────
       var btnContact       = document.getElementById('btn-contact');
@@ -3353,7 +3304,7 @@
         _syncTimers.push(setTimeout(function() { setProgress(70, 'Subiendo propiedades a Supabase...'); }, 3500));
         _syncTimers.push(setTimeout(function() { setProgress(85, 'Casi listo...'); }, 5000));
 
-        fetch('/chatbot/api/sync', {
+        window.authFetch('/chatbot/api/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: url })
@@ -3478,7 +3429,7 @@
 
         var formData = new FormData();
         formData.append('pdf', selectedFile);
-        var fetchPromise = fetch('/process', {
+        var fetchPromise = window.authFetch('/process', {
           method: 'POST',
           body: formData,
         });
@@ -3705,7 +3656,7 @@
         formData.append('modelo211', compFiles[2]);
         formData.append('modelo600', compFiles[3]);
 
-        var fetchPromise = fetch('/comprobacion', {
+        var fetchPromise = window.authFetch('/comprobacion', {
           method: 'POST',
           body: formData,
         });
@@ -4717,7 +4668,7 @@
         formData.append('pdf', file);
         formData.append('checks', JSON.stringify(checksArr));
 
-        fetch('/verify-hojas-batch', { method: 'POST', body: formData })
+        window.authFetch('/verify-hojas-batch', { method: 'POST', body: formData })
           .then(function(resp) { return resp.json(); })
           .then(function(data) {
             if (data.error) throw new Error(data.error);
@@ -4972,7 +4923,7 @@
       var assistantDiv = null;
       var assistantText = '';
 
-      fetch('/chatbot/api/chat', {
+      window.authFetch('/chatbot/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, message: text, history: chatHistory.slice(0, -1) })
@@ -5057,7 +5008,7 @@
     }
 
     function loadLeadsData() {
-      fetch('/chatbot/api/leads').then(function(r){return r.json();}).then(function(data) {
+      window.authFetch('/chatbot/api/leads').then(function(r){return r.json();}).then(function(data) {
         var leads = data.leads || [];
         document.getElementById('leads-stat-total').textContent = leads.length;
         document.getElementById('leads-stat-today').textContent = leads.filter(function(l){return isToday(l.created_at);}).length;

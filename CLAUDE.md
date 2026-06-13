@@ -3,13 +3,32 @@ This file provides guidance to Claude Code when working inside this repository.
 
 Scope
 Claude may only read or use files inside:
-~/Desktop/MODELIA/
+~/Documents/proyectos/Modelia/
 Do not inspect or reference anything outside this folder.
 
 Project Overview
 Python system that generates fixed-width .txt files for Modelo 211 (AEAT).
 Form: IRNR — Retención en la adquisición de bienes inmuebles a no residentes sin establecimiento permanente.
 The goal is to generate a TXT file fully compliant with AEAT official fixed-width record design, importable without validation errors.
+
+Auth + Supabase (2026-06-13)
+- Login is passwordless OTP via Supabase Auth (signInWithOtp + verifyOtp).
+- Only @cardenas-grancanaria.com emails can sign up (enforced in 3 layers:
+  client-side check, SQL trigger on auth.users, backend middleware).
+- Backend protects endpoints with @require_auth (Code/auth.py): every
+  protected route requires Authorization: Bearer <jwt>; the JWT is
+  validated against Supabase via auth.get_user(token) using the
+  service-role key, and the email domain + email_confirmed_at are
+  re-checked server-side.
+- Frontend uses window.authFetch(url, opts) instead of fetch() for any
+  call to the Flask backend; downloads use window.authDownload(url, fn).
+- Credentials: SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY
+  / ALLOWED_EMAIL_DOMAIN come from env vars in Railway. The anon key is
+  also served to the browser via GET /api/config.
+- RLS is on for audit_sessions, audit_checks, leads, chat_logs, properties
+  and the hojas-visita Storage bucket (policies in supabase/policies.sql).
+- Manual setup steps for Supabase Dashboard + Railway are in
+  supabase/GUIA_SUPABASE.md.
 
 Folder Structure
 MODELIA/

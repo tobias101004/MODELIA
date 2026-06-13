@@ -14,6 +14,7 @@ import uuid
 from flask import Blueprint, Response, jsonify, request
 
 from . import agent, database, property_sync
+from auth import require_auth  # noqa: E402 — Code/ esta en sys.path via app.py
 
 log = logging.getLogger("chatbot")
 
@@ -30,6 +31,7 @@ def _get_api_key() -> str:
 # ── Chat API ──────────────────────────────────────────────────────────────────
 
 @chatbot_bp.route("/api/chat", methods=["POST"])
+@require_auth
 def api_chat():
     data = request.get_json()
     if not data or "message" not in data:
@@ -75,6 +77,7 @@ def api_chat():
 # ── Sync API ──────────────────────────────────────────────────────────────────
 
 @chatbot_bp.route("/api/sync", methods=["POST"])
+@require_auth
 def api_sync():
     data = request.get_json() or {}
     url = data.get("url", property_sync.DEFAULT_XML_URL)
@@ -88,6 +91,7 @@ def api_sync():
 
 
 @chatbot_bp.route("/api/sync/status")
+@require_auth
 def api_sync_status():
     meta = property_sync.load_sync_meta()
     properties = property_sync.load_properties()
@@ -101,12 +105,14 @@ def api_sync_status():
 # ── Leads API ─────────────────────────────────────────────────────────────────
 
 @chatbot_bp.route("/api/leads")
+@require_auth
 def api_leads():
     leads = database.get_all_leads()
     return jsonify({"leads": leads, "total": len(leads)})
 
 
 @chatbot_bp.route("/api/leads/csv")
+@require_auth
 def api_leads_csv():
     leads = database.get_all_leads()
     output = io.StringIO()
