@@ -1819,9 +1819,32 @@
         padding: 16px;
       }
     }
+
+    /* ============================================================
+     * SEGURIDAD: bloqueo duro de la UI autenticada mientras no haya
+     * sesion confirmada. El body lleva la clase `no-auth` por defecto
+     * y SOLO se quita en showApp() tras verificar sesion via Supabase.
+     * Aunque algun handler intentara mostrar una vista interna por
+     * error, CSS lo capa.
+     * ============================================================ */
+    body.no-auth #view-dashboard,
+    body.no-auth #main-content,
+    body.no-auth #view-comprobacion,
+    body.no-auth #view-auditoria,
+    body.no-auth #view-chatbot,
+    body.no-auth #view-leads,
+    body.no-auth #view-account,
+    body.no-auth #header-buttons,
+    body.no-auth .modal-overlay {
+      display: none !important;
+    }
+    body.no-auth #logo-home {
+      cursor: default !important;
+      pointer-events: none;
+    }
   </style>
 </head>
-<body>
+<body class="no-auth">
 
   <!-- Header -->
   <div class="header">
@@ -2746,6 +2769,11 @@
         }
         _appAlreadyShown = true;
 
+        // Desbloquea la UI autenticada. ESTE es el unico sitio donde
+        // se quita la clase no-auth, y solo se llega aqui tras
+        // getSession()/verifyOtp() OK con session.user definido.
+        document.body.classList.remove('no-auth');
+
         viewLoading.classList.add('hidden');
         viewAuth.classList.remove('visible');
         mainContent.classList.remove('visible');
@@ -2761,6 +2789,9 @@
 
       function showLogin() {
         _appAlreadyShown = false;
+        // Vuelve a bloquear toda la UI autenticada. Aunque algun handler
+        // intentara mostrar el dashboard despues, CSS lo capa.
+        document.body.classList.add('no-auth');
         viewLoading.classList.add('hidden');
         viewAuth.classList.add('visible');
         viewDashboard.classList.remove('visible');
