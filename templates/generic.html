@@ -2950,11 +2950,33 @@
 
       modalLogoutConfirm.addEventListener('click', function() {
         modalLogout.classList.remove('active');
+        // Feedback visual instantaneo: no esperamos a la red ni al evento
+        // SIGNED_OUT (que puede no dispararse en todas las versiones del
+        // SDK). showLogin() es idempotente, asi que si despues llega
+        // SIGNED_OUT se vuelve a llamar y no pasa nada.
+        showLogin();
+        // En paralelo invalidamos la sesion en Supabase para que el JWT
+        // quede revocado en el servidor y no se pueda reusar.
         if (sb) {
-          sb.auth.signOut().catch(function() { showLogin(); });
-        } else {
-          showLogin();
+          try {
+            sb.auth.signOut({ scope: 'global' }).catch(function() { /* ignore */ });
+          } catch (e) { /* ignore */ }
         }
+        // Doble seguro: limpiamos cualquier rastro de sesion en este
+        // origen para que un refresh inmediato no la "resucite".
+        try {
+          var origin = window.location.origin;
+          Object.keys(localStorage).forEach(function(k) {
+            if (k.indexOf('supabase') !== -1 || k.indexOf('sb-') === 0) {
+              localStorage.removeItem(k);
+            }
+          });
+          Object.keys(sessionStorage).forEach(function(k) {
+            if (k.indexOf('supabase') !== -1 || k.indexOf('sb-') === 0) {
+              sessionStorage.removeItem(k);
+            }
+          });
+        } catch (e) { /* ignore */ }
       });
 
       // ── Helper global: fetch al backend con Authorization Bearer ──

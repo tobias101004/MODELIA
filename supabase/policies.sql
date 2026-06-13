@@ -44,6 +44,15 @@ before insert on auth.users
 for each row
 execute function public.enforce_email_domain();
 
+-- Tambien bloqueamos UPDATE: nadie puede cambiar su email a otro dominio
+drop trigger if exists enforce_email_domain_update_trigger on auth.users;
+
+create trigger enforce_email_domain_update_trigger
+before update of email on auth.users
+for each row
+when (new.email is distinct from old.email)
+execute function public.enforce_email_domain();
+
 
 -- =============================================================================
 -- 2. RLS en tablas de la app
